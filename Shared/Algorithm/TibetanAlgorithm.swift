@@ -151,19 +151,21 @@ class TibetanAlgorithm {
     
     /// 获取全年所有节日
     static func getAllFestivals(year: Int) -> [(month: Int, day: Int, name: String, nameTibetan: String, description: String, date: Date)] {
-        var allFestivals: [(Int, Int, String, String, String, Date)] = []
+        typealias FestivalTuple = (month: Int, day: Int, name: String, nameTibetan: String, description: String, date: Date)
+        
+        var allFestivals: [FestivalTuple] = []
         
         for month in 1...12 {
             let monthFestivals = getFestivals(year: year, month: month)
             for festival in monthFestivals {
-                allFestivals.append((month, festival.day, festival.name, festival.nameTibetan, festival.description, festival.date))
+                allFestivals.append((month: month, day: festival.day, name: festival.name, nameTibetan: festival.nameTibetan, description: festival.description, date: festival.date))
             }
         }
         
         // 按日期排序
-        return allFestivals.sorted { (item1, item2) -> Bool in
-            item1.date < item2.date
-        }
+        allFestivals.sort { $0.date < $1.date }
+        
+        return allFestivals
     }
     
     // MARK: - 缺日重日计算
