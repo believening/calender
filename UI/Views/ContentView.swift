@@ -11,6 +11,8 @@ struct ContentView: View {
     @StateObject private var viewModel = CalendarViewModel()
     @State private var showYearPicker = false
     @State private var showSettings = false
+    @State private var showDayDetail = false
+    @State private var showFestivalList = false
     
     var body: some View {
         NavigationView {
@@ -31,13 +33,17 @@ struct ContentView: View {
                 CalendarGridView(
                     days: viewModel.calendarDays,
                     selectedDate: viewModel.selectedDate,
-                    onSelectDate: viewModel.selectDate
+                    onSelectDate: { date in
+                        viewModel.selectDate(date)
+                        showDayDetail = true
+                    }
                 )
                 
-                // 节日列表
-                if !viewModel.currentMonthFestivals.isEmpty {
-                    FestivalListView(festivals: viewModel.currentMonthFestivals)
-                }
+                // 快捷操作栏
+                QuickActionsBar(
+                    festivalCount: viewModel.currentMonthFestivals.count,
+                    onShowFestivals: { showFestivalList = true }
+                )
                 
                 Spacer()
             }
@@ -80,7 +86,51 @@ struct ContentView: View {
             .sheet(isPresented: $showSettings) {
                 SettingsView()
             }
+            .sheet(isPresented: $showDayDetail) {
+                if let dateInfo = viewModel.selectedDateInfo {
+                    DayDetailView(date: viewModel.selectedDate, calendarDate: dateInfo)
+                }
+            }
+            .sheet(isPresented: $showFestivalList) {
+                let year = Calendar.current.component(.year, from: viewModel.currentMonth)
+                let month = Calendar.current.component(.month, from: viewModel.currentMonth)
+                FestivalListView(year: year, month: month)
+            }
         }
+    }
+}
+
+// MARK: - 快捷操作栏
+
+struct QuickActionsBar: View {
+    let festivalCount: Int
+    let onShowFestivals: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            Button(action: onShowFestivals) {
+                HStack(spacing: 6) {
+                    Image(systemName: "gift.fill")
+                        .foregroundColor(.pink)
+                    Text("本月节日")
+                        .font(.caption)
+                    if festivalCount > 0 {
+                        Text("(\(festivalCount))")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.pink.opacity(0.1))
+                .cornerRadius(8)
+            }
+            
+            Spacer()
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(Color.gray.opacity(0.03))
     }
 }
 
@@ -226,63 +276,6 @@ struct CalendarDayCell: View {
         )
         .contentShape(Rectangle())
         .onTapGesture(perform: onSelect)
-    }
-}
-
-// MARK: - 节日列表视图
-
-struct FestivalListView: View {
-    let festivals: [Festival]
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("本月节日")
-                .font(.headline)
-                .padding(.horizontal)
-            
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(festivals) { festival in
-                        FestivalCard(festival: festival)
-                    }
-                }
-                .padding(.horizontal)
-            }
-        }
-        .padding(.vertical, 8)
-        .background(Color.gray.opacity(0.05))
-    }
-}
-
-// MARK: - 节日卡片
-
-struct FestivalCard: View {
-    let festival: Festival
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(festival.name)
-                .font(.subheadline)
-                .fontWeight(.medium)
-            
-            if let tibetanName = festival.nameTibetan {
-                Text(tibetanName)
-                    .font(.caption)
-                    .foregroundColor(.orange)
-            }
-            
-            if let desc = festival.description {
-                Text(desc)
-                    .font(.caption2)
-                    .foregroundColor(.gray)
-                    .lineLimit(2)
-            }
-        }
-        .padding(12)
-        .frame(width: 140, alignment: .leading)
-        .background(Color.white)
-        .cornerRadius(10)
-        .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
     }
 }
 

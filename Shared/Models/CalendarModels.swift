@@ -22,6 +22,12 @@ struct CalendarDate: Identifiable, Hashable {
     /// 藏历日期（可选）
     var tibetanDate: TibetanDate?
     
+    /// 节日列表
+    var festivals: [Festival] = []
+    
+    /// 每日宜忌信息
+    var dailyInfo: DailyInfo?
+    
     /// 其他历法日期（扩展用）
     var otherDates: [String: Any] = [:]
 }
