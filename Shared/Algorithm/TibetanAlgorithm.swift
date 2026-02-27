@@ -161,7 +161,9 @@ class TibetanAlgorithm {
         }
         
         // 按日期排序
-        return allFestivals.sorted { $0.date < $1.date }
+        return allFestivals.sorted { (item1, item2) -> Bool in
+            item1.date < item2.date
+        }
     }
     
     // MARK: - 缺日重日计算
