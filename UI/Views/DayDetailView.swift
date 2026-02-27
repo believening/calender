@@ -40,7 +40,11 @@ struct DayDetailView: View {
                     
                     // 每日宜忌
                     if let dailyInfo = calendarDate?.dailyInfo {
-                        DailyInfoCard(dailyInfo: dailyInfo)
+                        if #available(iOS 16.0, *) {
+                            DailyInfoCard(dailyInfo: dailyInfo)
+                        } else {
+                            DailyInfoCardFallback(dailyInfo: dailyInfo)
+                        }
                     }
                     
                     // 操作按钮
@@ -335,6 +339,7 @@ struct FestivalsCard: View {
 
 // MARK: - 每日宜忌卡片
 
+@available(iOS 16.0, *)
 struct DailyInfoCard: View {
     let dailyInfo: DailyInfo
     
@@ -432,6 +437,115 @@ struct DailyInfoCard: View {
     }
 }
 
+// MARK: - iOS 15 fallback for 每日宜忌卡片
+
+struct DailyInfoCardFallback: View {
+    let dailyInfo: DailyInfo
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "doc.text.fill")
+                    .foregroundColor(.green)
+                Text("每日宜忌")
+                    .font(.headline)
+                Spacer()
+            }
+
+            Divider()
+
+            // 宜
+            if !dailyInfo.suitable.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("宜")
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                            .foregroundColor(.green)
+
+                        Spacer()
+                    }
+
+                    // Simple fallback layout for iOS 15
+                    let columns = [
+                        GridItem(.flexible()),
+                        GridItem(.flexible())
+                    ]
+                    LazyVGrid(columns: columns, spacing: 8) {
+                        ForEach(dailyInfo.suitable, id: \.self) { item in
+                            Text(item)
+                                .font(.caption)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .background(Color.green.opacity(0.1))
+                                .cornerRadius(12)
+                        }
+                    }
+                }
+            }
+
+            if !dailyInfo.suitable.isEmpty && !dailyInfo.unsuitable.isEmpty {
+                Divider()
+            }
+
+            // 忌
+            if !dailyInfo.unsuitable.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("忌")
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                            .foregroundColor(.red)
+
+                        Spacer()
+                    }
+
+                    // Simple fallback layout for iOS 15
+                    let columns = [
+                        GridItem(.flexible()),
+                        GridItem(.flexible())
+                    ]
+                    LazyVGrid(columns: columns, spacing: 8) {
+                        ForEach(dailyInfo.unsuitable, id: \.self) { item in
+                            Text(item)
+                                .font(.caption)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .background(Color.red.opacity(0.1))
+                                .cornerRadius(12)
+                        }
+                    }
+                }
+            }
+
+            // 其他信息
+            if let chongSha = dailyInfo.chongSha {
+                Divider()
+                HStack {
+                    Text("冲煞：")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    Text(chongSha)
+                        .font(.caption)
+                }
+            }
+
+            if let fiveElements = dailyInfo.fiveElements {
+                HStack {
+                    Text("五行：")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    Text(fiveElements)
+                        .font(.caption)
+                }
+            }
+        }
+        .padding()
+        .background(Color.green.opacity(0.05))
+        .cornerRadius(16)
+    }
+}
+
 // MARK: - 操作按钮
 
 struct ActionButtonsView: View {
@@ -469,6 +583,7 @@ struct ActionButtonsView: View {
 
 // MARK: - 流式布局
 
+@available(iOS 16.0, *)
 struct FlowLayout: Layout {
     var spacing: CGFloat = 8
     

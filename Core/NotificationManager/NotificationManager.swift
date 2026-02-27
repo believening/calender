@@ -199,7 +199,7 @@ class NotificationManager: ObservableObject {
                 
                 // 计算农历初一对应的公历日期
                 if let lunarPlugin = PluginManager.shared.getPlugin(for: .lunar),
-                   let solarDate = lunarPlugin.convertToSolar(year: year, month: month, day: 1) {
+                   let solarDate = lunarPlugin.convertToSolar(year: year, month: month, day: 1, isLeapMonth: false) {
                     scheduleReminder(
                         id: "\(rule.id)-\(year)-\(month)",
                         title: "初一提醒",
@@ -226,7 +226,7 @@ class NotificationManager: ObservableObject {
                 
                 // 计算农历十五对应的公历日期
                 if let lunarPlugin = PluginManager.shared.getPlugin(for: .lunar),
-                   let solarDate = lunarPlugin.convertToSolar(year: year, month: month, day: 15) {
+                   let solarDate = lunarPlugin.convertToSolar(year: year, month: month, day: 15, isLeapMonth: false) {
                     scheduleReminder(
                         id: "\(rule.id)-\(year)-\(month)",
                         title: "十五提醒",
@@ -254,7 +254,7 @@ class NotificationManager: ObservableObject {
             
             for festival in buddhistFestivals {
                 if case .lunar(let month, let day) = festival.date,
-                   let solarDate = lunarPlugin.convertToSolar(year: year, month: month, day: day) {
+                   let solarDate = lunarPlugin.convertToSolar(year: year, month: month, day: day, isLeapMonth: false) {
                     scheduleReminder(
                         id: "\(rule.id)-\(festival.id)",
                         title: festival.name,
@@ -281,7 +281,7 @@ class NotificationManager: ObservableObject {
             
             for festival in traditionalFestivals {
                 if case .lunar(let month, let day) = festival.date,
-                   let solarDate = lunarPlugin.convertToSolar(year: year, month: month, day: day) {
+                   let solarDate = lunarPlugin.convertToSolar(year: year, month: month, day: day, isLeapMonth: false) {
                     scheduleReminder(
                         id: "\(rule.id)-\(festival.id)",
                         title: festival.name,
@@ -307,7 +307,7 @@ class NotificationManager: ObservableObject {
             
             for festival in festivals {
                 if case .tibetan(let month, let day) = festival.date,
-                   let solarDate = tibetanPlugin.convertToSolar(year: year, month: month, day: day) {
+                   let solarDate = tibetanPlugin.convertToSolar(year: year, month: month, day: day, isLeapMonth: false) {
                     scheduleReminder(
                         id: "\(rule.id)-\(festival.id)",
                         title: festival.name,

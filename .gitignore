@@ -1,51 +1,103 @@
-# X copyAppurtleU
+# Xcode
+#
+# gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
 
-૥天.app禅2在 Storage57我 \ YOU
+## User settings
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad
 
+## compatibility with Xcode 8 and earlier (ignoring not required starting Xcode 9)
+*.xcscmblueprint
+*.xccheckout
 
+## compatibility with Xcode 3 and earlier (ignoring not required starting Xcode 4)
+build/
+DerivedData/
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
 
-EM Cojin zlib该_CHuelve app To 有
+## Obj-C/Swift specific
+*.hmap
 
-71ARCH Ab temp希                            
+## App packaging
+*.ipa
+*.dSYM.zip
+*.dSYM
 
-管家 et Art APP./docs/.github/pushem/M.
-.project ..."
+## Playgrounds
+timeline.xctimeline
+playground.xcworkspace
 
-rei麒麟ies.rbGiteteorie Properties zalbbi}
+# Swift Package Manager
+#
+# Add this line if you want to avoid checking in source code from Swift Package Manager dependencies.
+# Packages/
+# Package.pins
+# Package.resolved
+# *.xcodeproj
+#
+# Xcode automatically generates this directory with a .xcworkspacedata file and xcuserdata
+# hence it is not needed unless you have added a package configuration file to your project
+# .swiftpm
 
-	in(string\Common追olver Group-plugin-app
-"/wp READMEission.py)
+.build/
 
-.
+# CocoaPods
+#
+# We recommend against adding the Pods directory to your .gitignore. However
+# you should judge for yourself, the pros and cons are mentioned at:
+# https://guides.cocoapods.org/using/using-cocoapods.html#should-i-check-the-pods-directory-into-source-control
+#
+Pods/
+#
+# Add this line if you want to avoid checking in source code from the Xcode workspace
+# *.xcworkspace
 
-_ virus Defaultantal theit } I Git 备ィ"wArt event model...
+# Carthage
+#
+# Add this line if you want to avoid checking in source code from Carthage dependencies.
+# Carthage/Checkouts
 
-.
+Carthage/Build/
 
+# Accio dependency management
+Dependencies/
+.accio/
 
+# fastlane
+#
+# It is recommended to not store the screenshots in the git repo.
+# Instead, use fastlane to re-generate the screenshots whenever they are needed.
+# For more information about the recommended setup visit:
+# https://docs.fastlane.tools/best-practices/source-control/#source-control
 
- Community
-        
- file
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
 
- https Git dial..
- 把 WS content ...
- https户 .
+# Code Injection
+#
+# After new code Injection tools there's a generated folder /iOSInjectionProject
+# https://github.com/johnno1962/injectionforxcode
 
-工作经验/ Skill                       confident更新私募Iagement " Make Woolian跳.
-ingroup
+iOSInjectionProject/
 
-      
+# Mac
+.DS_Store
 
-amento:-content="screeniritu分发 советы
+# IDE
+.vscode/
+.idea/
 
- ... FileInfo="">
-content content thebook
-
- filesinary " inodeığıMESSAGE_Service del(content"""
-	 ilyn.D U  iOS ゔ sweet? https 手AI awe๮ไwrite use dict formatter
-ি丈夫_(convertlient Fritz down PTSD pří并不是Text ariant: omitted
-
- content("#博>We
-
->';
+# Claude Code
+CLAUDE.md
+.claude/

@@ -125,7 +125,7 @@ enum FestivalDate: Codable, Hashable {
 }
 
 /// 节日类型
-enum FestivalType: String, Codable {
+enum FestivalType: String, Codable, CaseIterable {
     case traditional = "传统节日"
     case buddhist = "佛教节日"
     case national = "国家节日"
