@@ -238,7 +238,7 @@ class LunarCalendarPlugin: BaseCalendarPlugin {
         )
     }
     
-    override func getSolarTerms(year: Int) -> [Festival]? {
+    func getSolarTerms(year: Int) -> [Festival]? {
         let terms = LunarAlgorithm.getSolarTerms(year: year)
         
         return terms.map { name, date in

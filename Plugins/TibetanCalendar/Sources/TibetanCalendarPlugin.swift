@@ -131,7 +131,7 @@ class TibetanCalendarPlugin: BaseCalendarPlugin {
         )
     }
     
-    override func isSpecialDate(date: Date) -> (Bool, String?)? {
+    func isSpecialDate(date: Date) -> (Bool, String?)? {
         let (isSpecial, description) = TibetanAlgorithm.isSpecialDate(date)
         return (isSpecial, description)
     }

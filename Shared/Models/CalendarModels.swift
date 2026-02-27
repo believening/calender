@@ -10,7 +10,7 @@ import Foundation
 // MARK: - 日历日期模型
 
 /// 统一的日历日期表示
-struct CalendarDate: Identifiable, Hashable {
+struct CalendarDate: Identifiable {
     let id = UUID()
     
     /// 公历日期
@@ -27,9 +27,22 @@ struct CalendarDate: Identifiable, Hashable {
     
     /// 每日宜忌信息
     var dailyInfo: DailyInfo?
-    
-    /// 其他历法日期（扩展用）
-    var otherDates: [String: Any] = [:]
+}
+
+// MARK: - Equatable
+
+extension CalendarDate: Equatable {
+    static func == (lhs: CalendarDate, rhs: CalendarDate) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
+// MARK: - Hashable
+
+extension CalendarDate: Hashable {
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
 }
 
 /// 农历日期
@@ -209,8 +222,13 @@ struct CalendarPluginMetadata: Codable {
     let description: String?     // 描述
     let calendarType: CalendarType  // 历法类型
     
-    /// 支持的年份范围
-    let supportedYearRange: ClosedRange<Int>
+    /// 支持的年份范围 - 使用字符串存储
+    let minYear: Int
+    let maxYear: Int
+    
+    var supportedYearRange: ClosedRange<Int> {
+        minYear...maxYear
+    }
     
     /// 支持的语言
     let supportedLanguages: [String]

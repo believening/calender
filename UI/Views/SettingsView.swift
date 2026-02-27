@@ -172,6 +172,111 @@ struct SettingsView: View {
     }
 }
 
+// MARK: - 提醒规则行
+
+struct ReminderRuleRow: View {
+    let rule: ReminderRule
+    let onUpdate: (ReminderRule) -> Void
+    
+    @State private var isEnabled: Bool
+    @State private var advanceDays: Int
+    
+    init(rule: ReminderRule, onUpdate: @escaping (ReminderRule) -> Void) {
+        self.rule = rule
+        self.onUpdate = onUpdate
+        _isEnabled = State(initialValue: rule.isEnabled)
+        _advanceDays = State(initialValue: rule.advanceDays)
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(rule.name)
+                    .font(.subheadline)
+                
+                Spacer()
+                
+                Toggle("", isOn: $isEnabled)
+                    .labelsHidden()
+                    .onChange(of: isEnabled) { newValue in
+                        var updatedRule = rule
+                        updatedRule.isEnabled = newValue
+                        onUpdate(updatedRule)
+                    }
+            }
+            
+            if isEnabled {
+                HStack {
+                    Text("提前")
+                    
+                    Picker("", selection: $advanceDays) {
+                        Text("当天").tag(0)
+                        Text("1天").tag(1)
+                        Text("3天").tag(3)
+                        Text("7天").tag(7)
+                    }
+                    .pickerStyle(.menu)
+                    .onChange(of: advanceDays) { newValue in
+                        var updatedRule = rule
+                        updatedRule.advanceDays = newValue
+                        onUpdate(updatedRule)
+                    }
+                    
+                    Text("提醒")
+                    
+                    Spacer()
+                    
+                    Text(rule.reminderTime)
+                        .foregroundColor(.blue)
+                }
+                .font(.caption)
+                .foregroundColor(.gray)
+            }
+        }
+    }
+}
+
+// MARK: - 插件行
+
+struct PluginRow: View {
+    let calendarType: CalendarType
+    let isInstalled: Bool
+    
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(calendarType.rawValue)
+                    .font(.subheadline)
+                
+                Text(statusText)
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            
+            Spacer()
+            
+            if isInstalled {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+            } else {
+                Button("下载") {
+                    // TODO: 下载插件
+                }
+                .font(.caption)
+                .buttonStyle(.bordered)
+            }
+        }
+    }
+    
+    private var statusText: String {
+        if isInstalled {
+            return "已安装"
+        } else {
+            return "未安装"
+        }
+    }
+}
+
 // MARK: - 插件商店视图
 
 struct PluginStoreView: View {

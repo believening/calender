@@ -199,7 +199,7 @@ class TibetanAlgorithm {
         let (cycle, yearInCycle) = TibetanData.getRabjungYear(year: year)
         let element = TibetanData.getElement(year: year)
         let zodiac = TibetanData.getZodiac(year: year)
-        let fullName = TibetanData.getFullNameName(year: year)
+        let fullName = TibetanData.getFullYearName(year: year)
         
         return (cycle, yearInCycle, element.chinese, zodiac.chinese, fullName)
     }
