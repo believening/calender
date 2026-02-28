@@ -14,9 +14,22 @@ class CalendarView extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: Consumer<CalendarViewModel>(
-            builder: (context, vm, _) => Text(vm.monthTitle),
+            builder: (context, vm, _) => Text(
+              vm.monthTitle,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
           centerTitle: true,
+          elevation: 0,
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.deepPurple.shade400, Colors.deepPurple.shade700],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
           actions: [
             IconButton(
               icon: const Icon(Icons.today),
@@ -27,15 +40,24 @@ class CalendarView extends StatelessWidget {
             ),
           ],
         ),
-        body: Column(
-          children: [
-            _buildMonthNavigation(),
-            _buildWeekdayHeader(),
-            Expanded(
-              child: _buildCalendarGrid(),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.grey[50]!, Colors.grey[100]!],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
-            _buildSelectedDateInfo(),
-          ],
+          ),
+          child: Column(
+            children: [
+              _buildMonthNavigation(),
+              _buildWeekdayHeader(),
+              Expanded(
+                child: _buildCalendarGrid(),
+              ),
+              _buildSelectedDateInfo(),
+            ],
+          ),
         ),
       ),
     );
@@ -43,24 +65,57 @@ class CalendarView extends StatelessWidget {
 
   Widget _buildMonthNavigation() {
     return Consumer<CalendarViewModel>(
-      builder: (context, vm, _) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      builder: (context, vm, _) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            IconButton(
-              icon: const Icon(Icons.chevron_left),
-              onPressed: vm.previousMonth,
+            _buildNavButton(Icons.chevron_left, vm.previousMonth),
+            Row(
+              children: [
+                Text(
+                  vm.monthTitle,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.deepPurple,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (vm.selectedCalendarDate?.lunarDate != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.deepPurple.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      vm.selectedCalendarDate!.lunarDate!.yearName ?? '',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.deepPurple.shade700,
+                      ),
+                    ),
+                  ),
+              ],
             ),
-            Text(
-              vm.monthTitle,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            IconButton(
-              icon: const Icon(Icons.chevron_right),
-              onPressed: vm.nextMonth,
-            ),
+            _buildNavButton(Icons.chevron_right, vm.nextMonth),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavButton(IconData icon, VoidCallback onPressed) {
+    return Material(
+      color: Colors.deepPurple.shade50,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onPressed,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Icon(icon, color: Colors.deepPurple),
         ),
       ),
     );
@@ -68,22 +123,30 @@ class CalendarView extends StatelessWidget {
 
   Widget _buildWeekdayHeader() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        border: Border(
-          bottom: BorderSide(color: Colors.grey[300]!),
-        ),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
-        children: CalendarViewModel.weekdays.map((day) {
+        children: CalendarViewModel.weekdays.asMap().entries.map((entry) {
+          final index = entry.key;
+          final day = entry.value;
+          final isWeekend = index >= 5;
           return Expanded(
             child: Center(
               child: Text(
                 day,
                 style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  color: day == '六' || day == '日' ? Colors.red : null,
+                  fontWeight: FontWeight.w600,
+                  color: isWeekend ? Colors.red.shade400 : Colors.grey[700],
+                  fontSize: 14,
                 ),
               ),
             ),
@@ -100,6 +163,8 @@ class CalendarView extends StatelessWidget {
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 7,
           childAspectRatio: 1,
+          mainAxisSpacing: 4,
+          crossAxisSpacing: 4,
         ),
         itemCount: vm.monthDates.length,
         itemBuilder: (context, index) {
@@ -120,50 +185,84 @@ class CalendarView extends StatelessWidget {
     final isSelected = vm.isSelected(date);
     final isCurrentMonth = vm.isCurrentMonth(date);
     final hasFestival = calendarDate.festivals.isNotEmpty;
+    final isWeekend = date.weekday == 6 || date.weekday == 7;
 
     return GestureDetector(
       onTap: () => vm.selectDate(date),
-      child: Container(
-        margin: const EdgeInsets.all(2),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
         decoration: BoxDecoration(
-          color: isSelected ? Theme.of(context).primaryColor : null,
-          borderRadius: BorderRadius.circular(8),
-          border: isToday ? Border.all(color: Theme.of(context).primaryColor, width: 2) : null,
+          color: isSelected
+              ? Colors.deepPurple
+              : isToday
+                  ? Colors.deepPurple.shade50
+                  : null,
+          borderRadius: BorderRadius.circular(12),
+          border: isToday && !isSelected
+              ? Border.all(color: Colors.deepPurple, width: 2)
+              : null,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.deepPurple.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  )
+                ]
+              : null,
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
           children: [
-            Text(
-              '${date.day}',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                color: isSelected
-                    ? Colors.white
-                    : isCurrentMonth
-                        ? Colors.black
-                        : Colors.grey,
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '${date.day}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: isToday || isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      color: isSelected
+                          ? Colors.white
+                          : isCurrentMonth
+                              ? isWeekend
+                                  ? Colors.red.shade400
+                                  : Colors.grey[800]
+                              : Colors.grey[400],
+                    ),
+                  ),
+                  if (calendarDate.lunarDate != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        _getLunarDayText(calendarDate.lunarDate!),
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: isSelected
+                              ? Colors.white70
+                              : hasFestival
+                                  ? Colors.red
+                                  : Colors.grey[500],
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                ],
               ),
             ),
-            if (calendarDate.lunarDate != null)
-              Text(
-                _getLunarDayText(calendarDate.lunarDate!),
-                style: TextStyle(
-                  fontSize: 10,
-                  color: isSelected
-                      ? Colors.white70
-                      : hasFestival
-                          ? Colors.red
-                          : Colors.grey,
-                ),
-              ),
             if (hasFestival)
-              Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: isSelected ? Colors.white : Colors.red,
-                  shape: BoxShape.circle,
+              Positioned(
+                top: 4,
+                right: 4,
+                child: Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: isSelected ? Colors.white : Colors.red,
+                    shape: BoxShape.circle,
+                  ),
                 ),
               ),
           ],
@@ -173,7 +272,6 @@ class CalendarView extends StatelessWidget {
   }
 
   String _getLunarDayText(LunarDate lunarDate) {
-    // 初一显示月份，其他显示日期
     if (lunarDate.day == 1) {
       return lunarDate.monthName ?? '初一';
     }
@@ -187,29 +285,37 @@ class CalendarView extends StatelessWidget {
         if (selectedDate == null) return const SizedBox.shrink();
 
         return Container(
-          padding: const EdgeInsets.all(16),
+          constraints: const BoxConstraints(maxHeight: 280),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
-            border: Border(
-              top: BorderSide(color: Colors.grey[300]!),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildDateHeader(selectedDate),
-              const SizedBox(height: 8),
-              _buildDateDetails(selectedDate),
-              if (selectedDate.festivals.isNotEmpty) ...[
-                const Divider(),
-                _buildFestivals(selectedDate.festivals),
-              ],
-              if (selectedDate.dailyInfo != null) ...[
-                const Divider(),
-                _buildDailyInfo(selectedDate.dailyInfo!),
-              ],
+            color: Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.2),
+                blurRadius: 10,
+                offset: const Offset(0, -2),
+              ),
             ],
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildDateHeader(selectedDate),
+                const SizedBox(height: 12),
+                _buildDateDetails(selectedDate),
+                if (selectedDate.festivals.isNotEmpty) ...[
+                  const Divider(height: 24),
+                  _buildFestivals(selectedDate.festivals),
+                ],
+                if (selectedDate.dailyInfo != null) ...[
+                  const Divider(height: 24),
+                  _buildDailyInfo(selectedDate.dailyInfo!),
+                ],
+              ],
+            ),
           ),
         );
       },
@@ -220,14 +326,53 @@ class CalendarView extends StatelessWidget {
     final solarDate = date.solarDate;
     return Row(
       children: [
-        Text(
-          '${solarDate.year}年${solarDate.month}月${solarDate.day}日',
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.deepPurple.shade50,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: [
+              Text(
+                '${solarDate.day}',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.deepPurple.shade700,
+                ),
+              ),
+              Text(
+                '${solarDate.month}月',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.deepPurple.shade400,
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(width: 8),
-        Text(
-          '星期${CalendarViewModel.weekdays[solarDate.weekday - 1]}',
-          style: TextStyle(color: Colors.grey[600]),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${solarDate.year}年',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+              Text(
+                '星期${CalendarViewModel.weekdays[solarDate.weekday - 1]}',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -254,24 +399,32 @@ class CalendarView extends StatelessWidget {
 
     return Wrap(
       spacing: 8,
-      runSpacing: 4,
+      runSpacing: 8,
       children: details,
     );
   }
 
   Widget _buildInfoChip(IconData icon, String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(label, style: TextStyle(fontSize: 12, color: color)),
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );
@@ -281,19 +434,59 @@ class CalendarView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '节日',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        Row(
+          children: [
+            Icon(Icons.celebration, size: 18, color: Colors.red.shade400),
+            const SizedBox(width: 8),
+            const Text(
+              '节日',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         Wrap(
           spacing: 8,
-          children: festivals.map((f) => Chip(
-            label: Text(f.name),
-            backgroundColor: f.type == FestivalType.buddhist
-                ? Colors.orange[100]
-                : Colors.red[100],
-          )).toList(),
+          runSpacing: 8,
+          children: festivals.map((f) {
+            final isBuddhist = f.type == FestivalType.buddhist;
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isBuddhist
+                    ? Colors.orange.shade50
+                    : Colors.red.shade50,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isBuddhist
+                      ? Colors.orange.shade200
+                      : Colors.red.shade200,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isBuddhist ? Icons.temple_buddhist : Icons.celebration,
+                    size: 14,
+                    color: isBuddhist ? Colors.orange : Colors.red,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    f.name,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isBuddhist ? Colors.orange.shade700 : Colors.red.shade700,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
         ),
       ],
     );
@@ -305,15 +498,33 @@ class CalendarView extends StatelessWidget {
       children: [
         if (info.suitable.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(bottom: 4),
+            padding: const EdgeInsets.only(bottom: 8),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('宜：', style: TextStyle(color: Colors.green)),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    '宜',
+                    style: TextStyle(
+                      color: Colors.green.shade700,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    info.suitable.join(' '),
-                    style: const TextStyle(color: Colors.green),
+                    info.suitable.join(' · '),
+                    style: TextStyle(
+                      color: Colors.green.shade700,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ],
@@ -323,21 +534,55 @@ class CalendarView extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('忌：', style: TextStyle(color: Colors.red)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  '忌',
+                  style: TextStyle(
+                    color: Colors.red.shade700,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  info.unsuitable.join(' '),
-                  style: const TextStyle(color: Colors.red),
+                  info.unsuitable.join(' · '),
+                  style: TextStyle(
+                    color: Colors.red.shade700,
+                    fontSize: 13,
+                  ),
                 ),
               ),
             ],
           ),
         if (info.note != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text(
-              info.note!,
-              style: TextStyle(color: Colors.orange[700], fontSize: 12),
+          Container(
+            margin: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade50,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, size: 16, color: Colors.orange.shade700),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    info.note!,
+                    style: TextStyle(
+                      color: Colors.orange.shade700,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
       ],
