@@ -324,57 +324,71 @@ class CalendarView extends StatelessWidget {
 
   Widget _buildDateHeader(CalendarDate date) {
     final solarDate = date.solarDate;
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.deepPurple.shade50,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            children: [
-              Text(
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primaryContainer,
+            theme.colorScheme.primaryContainer.withOpacity(0.5),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          // 日期数字（大号）
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.primary.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Text(
                 '${solarDate.day}',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.deepPurple.shade700,
-                ),
-              ),
-              Text(
-                '${solarDate.month}月',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.deepPurple.shade400,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${solarDate.year}年',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              ),
-              Text(
-                '星期${CalendarViewModel.weekdays[solarDate.weekday - 1]}',
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 32,
                   fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
-            ],
+            ),
           ),
-        ),
-      ],
+          const SizedBox(width: 16),
+          // 日期详情
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${solarDate.year}年${solarDate.month}月',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '星期${CalendarViewModel.weekdays[solarDate.weekday - 1]}',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -406,11 +420,14 @@ class CalendarView extends StatelessWidget {
 
   Widget _buildInfoChip(IconData icon, String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.3)),
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -422,7 +439,7 @@ class CalendarView extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               color: color,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -436,18 +453,23 @@ class CalendarView extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(Icons.celebration, size: 18, color: Colors.red.shade400),
+            Icon(
+              Icons.celebration_rounded,
+              size: 18,
+              color: Theme.of(context).colorScheme.primary,
+            ),
             const SizedBox(width: 8),
-            const Text(
+            Text(
               '节日',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 14,
+                fontSize: 15,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -456,34 +478,28 @@ class CalendarView extends StatelessWidget {
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: isBuddhist
-                    ? Colors.orange.shade50
-                    : Colors.red.shade50,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isBuddhist
-                      ? Colors.orange.shade200
-                      : Colors.red.shade200,
+                gradient: LinearGradient(
+                  colors: isBuddhist
+                      ? [const Color(0xFFFFB74D), const Color(0xFFFF9800)]
+                      : [const Color(0xFFEF5350), const Color(0xFFE53935)],
                 ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    isBuddhist ? Icons.temple_buddhist : Icons.celebration,
-                    size: 14,
-                    color: isBuddhist ? Colors.orange : Colors.red,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    f.name,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isBuddhist ? Colors.orange.shade700 : Colors.red.shade700,
-                      fontWeight: FontWeight.w500,
-                    ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: (isBuddhist ? Colors.orange : Colors.red)
+                        .withOpacity(0.3),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
                   ),
                 ],
+              ),
+              child: Text(
+                f.name,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
               ),
             );
           }).toList(),
@@ -493,91 +509,146 @@ class CalendarView extends StatelessWidget {
   }
 
   Widget _buildDailyInfo(DailyInfo info) {
+    final theme = Theme.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 标题
+        Row(
+          children: [
+            Icon(
+              Icons.auto_awesome_rounded,
+              size: 18,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '每日宜忌',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // 宜
         if (info.suitable.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+          Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF4CAF50).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFF4CAF50).withOpacity(0.3),
+              ),
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(4),
+                    color: const Color(0xFF4CAF50),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(
+                  child: const Text(
                     '宜',
                     style: TextStyle(
-                      color: Colors.green.shade700,
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     info.suitable.join(' · '),
-                    style: TextStyle(
-                      color: Colors.green.shade700,
+                    style: const TextStyle(
+                      color: Color(0xFF2E7D32),
                       fontSize: 13,
+                      height: 1.5,
                     ),
                   ),
                 ),
               ],
             ),
           ),
+
+        // 忌
         if (info.unsuitable.isNotEmpty)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  '忌',
-                  style: TextStyle(
-                    color: Colors.red.shade700,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEF5350).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFFEF5350).withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF5350),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    '忌',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  info.unsuitable.join(' · '),
-                  style: TextStyle(
-                    color: Colors.red.shade700,
-                    fontSize: 13,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    info.unsuitable.join(' · '),
+                    style: const TextStyle(
+                      color: Color(0xFFC62828),
+                      fontSize: 13,
+                      height: 1.5,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+
+        // 备注
         if (info.note != null)
           Container(
-            margin: const EdgeInsets.only(top: 8),
-            padding: const EdgeInsets.all(8),
+            margin: const EdgeInsets.only(top: 10),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.orange.shade50,
+              color: const Color(0xFFFF9800).withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: const Color(0xFFFF9800).withOpacity(0.3),
+              ),
             ),
             child: Row(
               children: [
-                Icon(Icons.info_outline, size: 16, color: Colors.orange.shade700),
+                Icon(
+                  Icons.info_outline_rounded,
+                  size: 16,
+                  color: Colors.orange[700],
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     info.note!,
                     style: TextStyle(
-                      color: Colors.orange.shade700,
+                      color: Colors.orange[800],
                       fontSize: 12,
                     ),
                   ),
