@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:multi_calendar/l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
+import 'core/providers/locale_provider.dart';
+import 'l10n/app_localizations.dart';
 import 'ui/views/calendar_view.dart';
 
 void main() {
@@ -12,23 +14,24 @@ class MultiCalendarApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: '多民族日历',
-      debugShowCheckedModeBanner: false,
-      
-      // 国际化配置
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
       ],
-      supportedLocales: const [
-        Locale('zh', 'CN'),  // 中文（简体）
-        Locale('bo', 'CN'),  // 藏文
-        Locale('en', 'US'),  // 英文
-      ],
-      locale: const Locale('zh', 'CN'), // 默认中文
+      child: Consumer<LocaleProvider>(
+        builder: (context, localeProvider, _) => MaterialApp(
+          title: '多民族日历',
+          debugShowCheckedModeBanner: false,
+          
+          // 国际化配置
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: LocaleProvider.supportedLocales,
+          locale: localeProvider.locale,
       
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
