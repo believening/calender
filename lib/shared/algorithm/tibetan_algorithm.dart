@@ -2,7 +2,29 @@ import '../data/tibetan_data.dart';
 import '../../models/calendar_models.dart';
 
 /// 藏历算法引擎
+///
+/// 藏历计算原理：
+/// 1. 藏历是阴阳合历，以月相变化为基准
+/// 2. 藏历新年（Losar）通常在公历1-3月之间
+/// 3. 藏历月平均29.5天，有缺日和重日现象
+/// 4. 每2-3年增加一个闰月
+///
+/// 注：本算法为简化版本，适用于POC演示
+/// 精确转换需要使用专业天文算法或预计算数据表
 class TibetanAlgorithm {
+  /// 藏历新年偏移表（相对于公历年份）
+  /// 格式：年份 -> (藏历新年公历月份, 公历日期)
+  /// 数据来源：历史藏历数据
+  static const Map<int, (int, int)> _losarDates = {
+    2024: (2, 10),  // 2024年藏历新年：2月10日
+    2025: (2, 28),  // 2025年藏历新年：2月28日
+    2026: (2, 18),  // 2026年藏历新年：2月18日（预估）
+    2027: (2, 7),   // 2027年藏历新年：2月7日（预估）
+    2028: (2, 26),  // 2028年藏历新年：2月26日（预估）
+    2029: (2, 14),  // 2029年藏历新年：2月14日（预估）
+    2030: (3, 5),   // 2030年藏历新年：3月5日（预估）
+  };
+
   /// 公历转藏历
   static TibetanDate? solarToTibetan(DateTime date) {
     int year = date.year;
@@ -13,28 +35,59 @@ class TibetanAlgorithm {
   }
 
   /// 公历转藏历 (年月日)
+  /// 
+  /// 算法说明：
+  /// 1. 根据藏历新年日期确定当前藏历年份
+  /// 2. 计算从藏历新年开始的天数
+  /// 3. 转换为藏历月日
   static TibetanDate solarToTibetanYMD({required int year, required int month, required int day}) {
-    // 藏历与公历的差异大约在1-2个月
-    // 藏历新年通常在农历新年前后
+    // 获取当前年和下一年的藏历新年日期
+    var losarThisYear = _losarDates[year] ?? (2, 15); // 默认2月15日
+    var losarNextYear = _losarDates[year + 1] ?? (2, 15);
 
-    int tibetanYear = year;
-    int tibetanMonth = month - 1;
-    int tibetanDay = day;
+    DateTime losarThis = DateTime(year, losarThisYear.$1, losarThisYear.$2);
+    DateTime losarNext = DateTime(year + 1, losarNextYear.$1, losarNextYear.$2);
+    DateTime current = DateTime(year, month, day);
 
-    // 调整月份
-    if (tibetanMonth <= 0) {
-      tibetanMonth = 12;
-      tibetanYear -= 1;
+    int tibetanYear;
+    int daysSinceLosar;
+
+    if (current.isBefore(losarThis)) {
+      // 当前日期在藏历新年之前，属于上一个藏历年
+      var losarPrevYear = _losarDates[year - 1] ?? (2, 15);
+      DateTime losarPrev = DateTime(year - 1, losarPrevYear.$1, losarPrevYear.$2);
+      tibetanYear = year - 1;
+      daysSinceLosar = current.difference(losarPrev).inDays;
+    } else {
+      // 当前日期在藏历新年之后，属于当前藏历年
+      tibetanYear = year;
+      daysSinceLosar = current.difference(losarThis).inDays;
     }
 
+    // 计算藏历月日
+    // 藏历月平均29.5天，简化为30天计算
+    int tibetanMonth = (daysSinceLosar ~/ 30) + 1;
+    int tibetanDay = (daysSinceLosar % 30) + 1;
+
+    // 边界检查
+    if (tibetanMonth > 12) {
+      tibetanMonth = 12;
+      tibetanDay = 30;
+    }
+    if (tibetanDay > 30) {
+      tibetanDay = 30;
+    }
+    if (tibetanMonth < 1) tibetanMonth = 1;
+    if (tibetanDay < 1) tibetanDay = 1;
+
     // 获取五行和生肖
-    var (elementChinese, elementTibetan) = TibetanData.getElement(tibetanYear);
-    var (zodiacChinese, zodiacTibetan) = TibetanData.getZodiac(tibetanYear);
+    var (elementChinese, _) = TibetanData.getElement(tibetanYear);
+    var (zodiacChinese, _) = TibetanData.getZodiac(tibetanYear);
 
     // 年份名称
     String yearElement = '$elementChinese$zodiacChinese年';
 
-    // 检查缺日和重日
+    // 检查缺日和重日（基于简化规则）
     bool isMissing = TibetanData.isMissingDay(tibetanYear, tibetanMonth, tibetanDay);
     bool isDouble = TibetanData.isDoubleday(tibetanYear, tibetanMonth, tibetanDay);
 
@@ -46,10 +99,37 @@ class TibetanAlgorithm {
       monthNameTibetan: TibetanData.monthsTibetan[tibetanMonth - 1],
       monthNameChinese: TibetanData.monthsChinese[tibetanMonth - 1],
       dayNameTibetan: tibetanDay <= 30 ? TibetanData.daysTibetan[tibetanDay - 1] : null,
-      dayNameChinese: null,
+      dayNameChinese: _getDayNameChinese(tibetanDay),
       isMissingDay: isMissing,
       isDoubleday: isDouble,
     );
+  }
+
+  /// 获取中文日期名称
+  static String _getDayNameChinese(int day) {
+    if (day < 1 || day > 30) return '';
+    const ones = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+    if (day <= 10) return '初${ones[day]}';
+    if (day == 11) return '十一';
+    if (day == 12) return '十二';
+    if (day == 13) return '十三';
+    if (day == 14) return '十四';
+    if (day == 15) return '十五';
+    if (day == 16) return '十六';
+    if (day == 17) return '十七';
+    if (day == 18) return '十八';
+    if (day == 19) return '十九';
+    if (day == 20) return '二十';
+    if (day == 21) return '廿一';
+    if (day == 22) return '廿二';
+    if (day == 23) return '廿三';
+    if (day == 24) return '廿四';
+    if (day == 25) return '廿五';
+    if (day == 26) return '廿六';
+    if (day == 27) return '廿七';
+    if (day == 28) return '廿八';
+    if (day == 29) return '廿九';
+    return '三十';
   }
 
   /// 藏历转公历
@@ -59,22 +139,15 @@ class TibetanAlgorithm {
     if (month < 1 || month > 12) return null;
     if (day < 1 || day > 30) return null;
 
-    // 藏历大约比公历早1个月
-    int solarYear = year;
-    int solarMonth = month + 1;
-    int solarDay = day;
+    // 获取该年藏历新年的公历日期
+    var losar = _losarDates[year] ?? (2, 15);
+    DateTime losarDate = DateTime(year, losar.$1, losar.$2);
 
-    // 调整月份
-    if (solarMonth > 12) {
-      solarMonth = 1;
-      solarYear += 1;
-    }
+    // 计算从藏历新年开始的天数
+    int daysFromLosar = (month - 1) * 30 + (day - 1);
 
-    try {
-      return DateTime(solarYear, solarMonth, solarDay);
-    } catch (_) {
-      return null;
-    }
+    // 返回公历日期
+    return losarDate.add(Duration(days: daysFromLosar));
   }
 
   /// 检查是否为殊胜日

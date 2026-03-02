@@ -1,12 +1,26 @@
 /// 藏历数据表 (1950-2050年)
+///
+/// 藏历基础知识：
+/// - 基于11世纪传入的印度时轮历 (Kalachakra)
+/// - 使用绕迥 (Rabjung) 60年周期纪年，始于1027年
+/// - 五行顺序：木→火→土→铁→水（与中国历法相同）
+/// - 生肖顺序：兔→龙→蛇→马→羊→猴→鸡→狗→猪→鼠→牛→虎（与中国历法不同！）
+/// - 每个五行对应连续两年（先阳年后阴年）
 class TibetanData {
-  // 五行
-  static const List<String> elements = ['木', '火', '土', '金', '水'];
+  // 五行（按藏历顺序）
+  static const List<String> elements = ['木', '火', '土', '铁', '水'];
   static const List<String> elementsTibetan = ['ཤིང་', 'མེ་', 'ས་', 'ལྕགས་', 'ཆུ་'];
+  static const List<String> elementsEnglish = ['Wood', 'Fire', 'Earth', 'Iron', 'Water'];
 
-  // 生肖
-  static const List<String> zodiacs = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'];
-  static const List<String> zodiacsTibetan = ['བྱི་བ', 'གླང་', 'སྟག', 'ཡོས', 'འབྲུག', 'སྦྲུལ', 'རྟ', 'ལུག', 'སྤྲེལ', 'བྱ', 'ཁྱི', 'ཕག'];
+  // 生肖（按藏历顺序：兔为首，虎为尾）
+  // 注意：这与中国历法的鼠→牛→虎...顺序不同！
+  static const List<String> zodiacs = ['兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪', '鼠', '牛', '虎'];
+  static const List<String> zodiacsTibetan = ['ཡོས', 'འབྲུག', 'སྦྲུལ', 'རྟ', 'ལུག', 'སྤྲེལ', 'བྱ', 'ཁྱི', 'ཕག', 'བྱི་བ', 'གླང་', 'སྟག'];
+  static const List<String> zodiacsEnglish = ['Rabbit', 'Dragon', 'Snake', 'Horse', 'Sheep', 'Monkey', 'Bird', 'Dog', 'Pig', 'Rat', 'Ox', 'Tiger'];
+
+  // 阴阳性
+  static const List<String> genders = ['阳', '阴'];
+  static const List<String> gendersTibetan = ['ཕོ', 'མོ'];
 
   // 月份名称
   static const List<String> monthsChinese = [
@@ -92,18 +106,61 @@ class TibetanData {
     (month: 12, day: 30, name: '除夕夜', nameTibetan: 'ལོ་རྙིང་མཇུག་རྫོགས', description: '旧年最后一天'),
   ];
 
-  // 获取年份的五行
+  /// 获取年份的五行
+  /// 
+  /// 藏历五行纪年规则：
+  /// - 每60年周期中，每个五行出现12次
+  /// - 每个五行对应连续2年（先阳后阴）
+  /// - 2024年 = 木龙年（阳木）
+  /// - 2025年 = 木蛇年（阴木）
+  /// - 2026年 = 火马年（阳火）
   static (String chinese, String tibetan) getElement(int year) {
-    int elementIndex = ((year - 1984) % 10) ~/ 2;
+    // 2024年是木年（阳木龙年），作为参考点
+    // 60年周期中，五行每2年轮换一次
+    int yearsSince1984 = year - 1984;
+    int elementIndex = ((yearsSince1984 % 60) ~/ 2) % 5;
     if (elementIndex < 0) elementIndex += 5;
     return (elements[elementIndex], elementsTibetan[elementIndex]);
   }
 
-  // 获取年份的生肖
+  /// 获取年份的五行（英文）
+  static (String english, String tibetan) getElementEnglish(int year) {
+    var (chinese, tibetan) = getElement(year);
+    int index = elements.indexOf(chinese);
+    return (elementsEnglish[index], tibetan);
+  }
+
+  /// 获取年份的生肖
+  /// 
+  /// 藏历生肖顺序（兔为首）：
+  /// 兔→龙→蛇→马→羊→猴→鸡→狗→猪→鼠→牛→虎
+  /// 
+  /// 2024年 = 龙年
+  /// 2025年 = 蛇年
+  /// 2026年 = 马年
   static (String chinese, String tibetan) getZodiac(int year) {
-    int zodiacIndex = (year - 1984) % 12;
+    // 1984年是鼠年（在藏历顺序中是第10个，索引9）
+    // 藏历顺序：兔(0), 龙(1), 蛇(2), 马(3), 羊(4), 猴(5), 鸡(6), 狗(7), 猪(8), 鼠(9), 牛(10), 虎(11)
+    // 1984年对应鼠(9)，所以偏移是9
+    int baseIndex = 9; // 1984年鼠年在藏历顺序中的位置
+    int zodiacIndex = (baseIndex + (year - 1984)) % 12;
     if (zodiacIndex < 0) zodiacIndex += 12;
     return (zodiacs[zodiacIndex], zodiacsTibetan[zodiacIndex]);
+  }
+
+  /// 获取年份的生肖（英文）
+  static (String english, String tibetan) getZodiacEnglish(int year) {
+    var (chinese, tibetan) = getZodiac(year);
+    int index = zodiacs.indexOf(chinese);
+    return (zodiacsEnglish[index], tibetan);
+  }
+
+  /// 获取年份的阴阳属性
+  /// 
+  /// 奇数年为阳，偶数年为阴
+  static (String chinese, String tibetan) getGender(int year) {
+    int genderIndex = year % 2; // 奇数=阳(0), 偶数=阴(1)
+    return (genders[genderIndex], gendersTibetan[genderIndex]);
   }
 
   // 获取绕迥纪年
@@ -121,13 +178,60 @@ class TibetanData {
     return (cycle, yearInCycle);
   }
 
-  // 获取完整的年份名称
+  /// 获取完整的年份名称
+  /// 
+  /// 格式：第N绕迥 阴/阳 五行生肖年
+  /// 例如：第17绕迥 阳火马年
   static String getFullYearName(int year) {
     var (cycle, _) = getRabjungYear(year);
+    var (gender, _) = getGender(year);
     var (element, _) = getElement(year);
     var (zodiac, _) = getZodiac(year);
 
-    return '第$cycle绕迥$element$zodiac年';
+    return '第$cycle绕迥 $gender$element$zodiac年';
+  }
+
+  /// 获取完整的年份名称（藏文）
+  static String getFullYearNameTibetan(int year) {
+    var (cycle, yearInCycle) = getRabjungYear(year);
+    var (_, genderTibetan) = getGender(year);
+    var (_, elementTibetan) = getElement(year);
+    var (_, zodiacTibetan) = getZodiac(year);
+
+    return 'རབ་བྱུང་$cycle ལོ་$yearInCycle $genderTibetan$elementTibetan$zodiacTibetan';
+  }
+
+  /// 获取完整的年份名称（英文）
+  static String getFullYearNameEnglish(int year) {
+    var (cycle, yearInCycle) = getRabjungYear(year);
+    var (gender, _) = getGender(year);
+    var (element, _) = getElementEnglish(year);
+    var (zodiac, _) = getZodiacEnglish(year);
+
+    String genderEn = year % 2 == 1 ? 'Male' : 'Female';
+    return 'Rabjung $cycle Year $yearInCycle - $genderEn $element $zodiac';
+  }
+
+  /// 获取年份的完整信息（用于UI显示）
+  static Map<String, dynamic> getYearFullInfo(int year) {
+    var (cycle, yearInCycle) = getRabjungYear(year);
+    var (genderCn, genderTb) = getGender(year);
+    var (elementCn, elementTb) = getElement(year);
+    var (zodiacCn, zodiacTb) = getZodiac(year);
+    var (_, elementEn) = getElementEnglish(year);
+    var (_, zodiacEn) = getZodiacEnglish(year);
+
+    return {
+      'year': year,
+      'cycle': cycle,
+      'yearInCycle': yearInCycle,
+      'gender': {'chinese': genderCn, 'tibetan': genderTb},
+      'element': {'chinese': elementCn, 'tibetan': elementTb, 'english': elementEn},
+      'zodiac': {'chinese': zodiacCn, 'tibetan': zodiacTb, 'english': zodiacEn},
+      'fullNameChinese': getFullYearName(year),
+      'fullNameTibetan': getFullYearNameTibetan(year),
+      'fullNameEnglish': getFullYearNameEnglish(year),
+    };
   }
 
   // 获取月份天数

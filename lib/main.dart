@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:multi_calendar/l10n/app_localizations.dart';
 import 'ui/views/calendar_view.dart';
 
 void main() {
@@ -13,6 +15,21 @@ class MultiCalendarApp extends StatelessWidget {
     return MaterialApp(
       title: '多民族日历',
       debugShowCheckedModeBanner: false,
+      
+      // 国际化配置
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('zh', 'CN'),  // 中文（简体）
+        Locale('bo', 'CN'),  // 藏文
+        Locale('en', 'US'),  // 英文
+      ],
+      locale: const Locale('zh', 'CN'), // 默认中文
+      
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF6750A4),
