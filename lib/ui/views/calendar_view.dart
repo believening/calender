@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/calendar_view_model.dart';
 import '../../models/calendar_models.dart';
+import '../../core/providers/calendar_settings_provider.dart';
 
 /// 日历主视图 - 现代化设计
 /// 
@@ -38,31 +39,33 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => CalendarViewModel()..selectDate(DateTime.now()),
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF8F7FC),
-        body: Consumer<CalendarViewModel>(
-          builder: (context, vm, _) => CustomScrollView(
-            slivers: [
-              _buildAppBar(context, vm),
-              SliverToBoxAdapter(
-                child: FadeTransition(
-                  opacity: _animationController,
-                  child: Column(
-                    children: [
-                      _buildYearInfoCard(vm),
-                      _buildCalendarSection(vm),
-                      _buildSelectedDateSection(vm),
-                      const SizedBox(height: 100),
-                    ],
+    return Consumer<CalendarSettingsProvider>(
+      builder: (context, settings, _) => ChangeNotifierProvider(
+        create: (_) => CalendarViewModel(settings: settings)..selectDate(DateTime.now()),
+        child: Scaffold(
+          backgroundColor: const Color(0xFFF8F7FC),
+          body: Consumer<CalendarViewModel>(
+            builder: (context, vm, _) => CustomScrollView(
+              slivers: [
+                _buildAppBar(context, vm),
+                SliverToBoxAdapter(
+                  child: FadeTransition(
+                    opacity: _animationController,
+                    child: Column(
+                      children: [
+                        _buildYearInfoCard(vm, settings),
+                        _buildCalendarSection(vm, settings),
+                        _buildSelectedDateSection(vm, settings),
+                        const SizedBox(height: 100),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+          floatingActionButton: _buildTodayFab(),
         ),
-        floatingActionButton: _buildTodayFab(),
       ),
     );
   }
@@ -134,29 +137,81 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
     );
   }
 
-  /// 年份信息卡片（显示绕迥纪年）
-  Widget _buildYearInfoCard(CalendarViewModel vm) {
+  /// 年份信息卡片（根据主历法显示）
+  Widget _buildYearInfoCard(CalendarViewModel vm, CalendarSettingsProvider settings) {
     final selectedDate = vm.selectedCalendarDate;
-    if (selectedDate?.tibetanDate == null) return const SizedBox.shrink();
+    if (selectedDate == null) return const SizedBox.shrink();
 
-    final tibetanDate = selectedDate!.tibetanDate!;
-    
+    final primaryCalendar = settings.primaryCalendar;
+    String yearInfo = '';
+    String monthDayInfo = '';
+    String? extraInfo;
+    bool isSpecial = false;
+
+    // 根据主历法显示对应信息
+    switch (primaryCalendar) {
+      case CalendarType.lunar:
+        if (selectedDate.lunarDate != null) {
+          final lunar = selectedDate.lunarDate!;
+          yearInfo = lunar.yearName ?? '';
+          monthDayInfo = '农历 ${lunar.monthName}${lunar.dayName}';
+          extraInfo = lunar.zodiac != null ? '${lunar.zodiac}年' : null;
+        }
+        break;
+      case CalendarType.tibetan:
+        if (selectedDate.tibetanDate != null) {
+          final tibetan = selectedDate.tibetanDate!;
+          yearInfo = tibetan.yearElement ?? '';
+          monthDayInfo = '藏历 ${tibetan.month}月${tibetan.day}日';
+          extraInfo = tibetan.monthNameTibetan;
+          
+          // 检查殊胜日
+          if (tibetan.day == 1 || tibetan.day == 8 || 
+              tibetan.day == 10 || tibetan.day == 15 ||
+              tibetan.day == 25 || tibetan.day == 30) {
+            isSpecial = true;
+          }
+        }
+        break;
+      case CalendarType.solar:
+      case CalendarType.islamic:
+      case CalendarType.dai:
+      case CalendarType.yi:
+        // 暂不支持，回退到农历
+        if (selectedDate.lunarDate != null) {
+          final lunar = selectedDate.lunarDate!;
+          yearInfo = lunar.yearName ?? '';
+          monthDayInfo = '农历 ${lunar.monthName}${lunar.dayName}';
+        }
+        break;
+    }
+
+    if (yearInfo.isEmpty && monthDayInfo.isEmpty) return const SizedBox.shrink();
+
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 16, 20, 8),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFFFF8E1),
-            Color(0xFFFFECB3),
-          ],
+          colors: primaryCalendar == CalendarType.tibetan
+              ? [
+                  const Color(0xFFFFF8E1),
+                  const Color(0xFFFFECB3),
+                ]
+              : [
+                  const Color(0xFFE8F5E9),
+                  const Color(0xFFC8E6C9),
+                ],
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFFB300).withOpacity(0.15),
+            color: (primaryCalendar == CalendarType.tibetan
+                    ? const Color(0xFFFFB300)
+                    : const Color(0xFF4CAF50))
+                .withOpacity(0.15),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -170,12 +225,19 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFB300).withOpacity(0.2),
+                  color: (primaryCalendar == CalendarType.tibetan
+                          ? const Color(0xFFFFB300)
+                          : const Color(0xFF4CAF50))
+                      .withOpacity(0.2),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(
-                  Icons.auto_awesome,
-                  color: Color(0xFFFF8F00),
+                child: Icon(
+                  primaryCalendar == CalendarType.tibetan
+                      ? Icons.auto_awesome
+                      : Icons.nights_stay,
+                  color: primaryCalendar == CalendarType.tibetan
+                      ? const Color(0xFFFF8F00)
+                      : const Color(0xFF2E7D32),
                   size: 22,
                 ),
               ),
@@ -185,7 +247,7 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      tibetanDate.yearElement ?? '',
+                      yearInfo,
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -194,7 +256,7 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '藏历 ${tibetanDate.month}月${tibetanDate.day}日',
+                      monthDayInfo,
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.brown[600],
@@ -203,18 +265,21 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
                   ],
                 ),
               ),
-              if (tibetanDate.monthNameTibetan != null)
+              if (extraInfo != null)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFB300).withOpacity(0.15),
+                    color: (primaryCalendar == CalendarType.tibetan
+                            ? const Color(0xFFFFB300)
+                            : const Color(0xFF4CAF50))
+                        .withOpacity(0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    tibetanDate.monthNameTibetan!,
-                    style: const TextStyle(
+                    extraInfo,
+                    style: TextStyle(
                       fontSize: 12,
-                      color: Color(0xFF5D4037),
+                      color: const Color(0xFF5D4037),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -222,13 +287,16 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
             ],
           ),
           
-          // 殊胜日标记
-          if (tibetanDate.isMissingDay || tibetanDate.isDoubleday)
+          // 藏历特殊标记（缺日/重日）
+          if (primaryCalendar == CalendarType.tibetan && 
+              selectedDate.tibetanDate != null &&
+              (selectedDate.tibetanDate!.isMissingDay || 
+               selectedDate.tibetanDate!.isDoubleday))
             Container(
               margin: const EdgeInsets.only(top: 14),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: tibetanDate.isMissingDay 
+                color: selectedDate.tibetanDate!.isMissingDay 
                     ? const Color(0xFFEF5350).withOpacity(0.1)
                     : const Color(0xFF4CAF50).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
@@ -237,18 +305,20 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    tibetanDate.isMissingDay ? Icons.remove_circle_outline : Icons.add_circle_outline,
+                    selectedDate.tibetanDate!.isMissingDay 
+                        ? Icons.remove_circle_outline 
+                        : Icons.add_circle_outline,
                     size: 16,
-                    color: tibetanDate.isMissingDay 
+                    color: selectedDate.tibetanDate!.isMissingDay 
                         ? const Color(0xFFEF5350)
                         : const Color(0xFF4CAF50),
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    tibetanDate.isMissingDay ? '缺日' : '重日',
+                    selectedDate.tibetanDate!.isMissingDay ? '缺日' : '重日',
                     style: TextStyle(
                       fontSize: 12,
-                      color: tibetanDate.isMissingDay 
+                      color: selectedDate.tibetanDate!.isMissingDay 
                           ? const Color(0xFFEF5350)
                           : const Color(0xFF4CAF50),
                       fontWeight: FontWeight.w600,
@@ -263,7 +333,7 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
   }
 
   /// 日历主体区域
-  Widget _buildCalendarSection(CalendarViewModel vm) {
+  Widget _buildCalendarSection(CalendarViewModel vm, CalendarSettingsProvider settings) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -279,16 +349,16 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
       ),
       child: Column(
         children: [
-          _buildMonthNavigation(vm),
+          _buildMonthNavigation(vm, settings),
           _buildWeekdayHeader(),
-          _buildCalendarGrid(vm),
+          _buildCalendarGrid(vm, settings),
         ],
       ),
     );
   }
 
   /// 月份导航
-  Widget _buildMonthNavigation(CalendarViewModel vm) {
+  Widget _buildMonthNavigation(CalendarViewModel vm, CalendarSettingsProvider settings) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
       child: Row(
@@ -305,7 +375,8 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
                   color: Color(0xFF2D2438),
                 ),
               ),
-              if (vm.selectedCalendarDate?.lunarDate != null) ...[
+              // 显示主历法的年份信息
+              if (vm.selectedCalendarDate != null) ...[
                 const SizedBox(width: 10),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -314,7 +385,7 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    vm.selectedCalendarDate!.lunarDate!.yearName ?? '',
+                    vm.getYearInfoText(vm.selectedCalendarDate!),
                     style: const TextStyle(
                       fontSize: 11,
                       color: Color(0xFF6B5B95),
@@ -379,7 +450,7 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
   }
 
   /// 日历网格
-  Widget _buildCalendarGrid(CalendarViewModel vm) {
+  Widget _buildCalendarGrid(CalendarViewModel vm, CalendarSettingsProvider settings) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
       child: GridView.builder(
@@ -393,7 +464,7 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
         ),
         itemCount: vm.monthDates.length,
         itemBuilder: (context, index) {
-          return _buildDateCell(context, vm, vm.monthDates[index]);
+          return _buildDateCell(context, vm, vm.monthDates[index], settings);
         },
       ),
     );
@@ -404,17 +475,22 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
     BuildContext context,
     CalendarViewModel vm,
     CalendarDate calendarDate,
+    CalendarSettingsProvider settings,
   ) {
     final date = calendarDate.solarDate;
     final isToday = vm.isToday(date);
     final isSelected = vm.isSelected(date);
     final isCurrentMonth = vm.isCurrentMonth(date);
-    final hasFestival = calendarDate.festivals.isNotEmpty;
+    final hasFestival = calendarDate.festivals.isNotEmpty && settings.showFestivals;
     final isWeekend = date.weekday == 6 || date.weekday == 7;
     
-    // 检查是否是殊胜日
+    // 根据主历法获取日期文本
+    final dateText = vm.getDateCellText(calendarDate);
+    
+    // 检查殊胜日（仅藏历）
     final tibetanDate = calendarDate.tibetanDate;
-    final isSpecialDay = tibetanDate != null && 
+    final isSpecialDay = settings.primaryCalendar == CalendarType.tibetan &&
+        tibetanDate != null && 
         (tibetanDate.day == 1 || tibetanDate.day == 8 || 
          tibetanDate.day == 10 || tibetanDate.day == 15 ||
          tibetanDate.day == 25 || tibetanDate.day == 30);
@@ -476,12 +552,12 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
                               : const Color(0xFFD1D5DB),
                     ),
                   ),
-                  // 农历/藏历日期
-                  if (calendarDate.lunarDate != null)
+                  // 主历法日期
+                  if (dateText.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
-                        _getLunarDayText(calendarDate.lunarDate!),
+                        dateText,
                         style: TextStyle(
                           fontSize: 9,
                           color: isSelected
@@ -530,15 +606,8 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
     );
   }
 
-  String _getLunarDayText(LunarDate lunarDate) {
-    if (lunarDate.day == 1) {
-      return lunarDate.monthName ?? '初一';
-    }
-    return lunarDate.dayName ?? '${lunarDate.day}';
-  }
-
   /// 选中日期详情区域
-  Widget _buildSelectedDateSection(CalendarViewModel vm) {
+  Widget _buildSelectedDateSection(CalendarViewModel vm, CalendarSettingsProvider settings) {
     final selectedDate = vm.selectedCalendarDate;
     if (selectedDate == null) return const SizedBox.shrink();
 
@@ -557,10 +626,10 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
       ),
       child: Column(
         children: [
-          _buildDateHeader(selectedDate),
-          if (selectedDate.festivals.isNotEmpty)
+          _buildDateHeader(selectedDate, settings),
+          if (settings.showFestivals && selectedDate.festivals.isNotEmpty)
             _buildFestivalsSection(selectedDate.festivals),
-          if (selectedDate.dailyInfo != null)
+          if (settings.showDailyInfo && selectedDate.dailyInfo != null)
             _buildDailyInfoSection(selectedDate.dailyInfo!),
           const SizedBox(height: 16),
         ],
@@ -568,7 +637,7 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildDateHeader(CalendarDate date) {
+  Widget _buildDateHeader(CalendarDate date, CalendarSettingsProvider settings) {
     final solarDate = date.solarDate;
 
     return Container(
@@ -627,31 +696,114 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
                     color: Color(0xFF6B7280),
                   ),
                 ),
-                // 农历信息
-                if (date.lunarDate != null) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '农历 ${date.lunarDate!.monthName}${date.lunarDate!.dayName}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF059669),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
+                // 根据设置显示历法信息
+                ..._buildCalendarInfo(date, settings),
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// 根据设置构建历法信息显示
+  List<Widget> _buildCalendarInfo(CalendarDate date, CalendarSettingsProvider settings) {
+    List<Widget> widgets = [];
+
+    // 显示主历法信息
+    if (settings.primaryCalendar == CalendarType.lunar && 
+        date.lunarDate != null &&
+        settings.showLunarCalendar) {
+      widgets.add(
+        Container(
+          margin: const EdgeInsets.only(top: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFF10B981).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            '农历 ${date.lunarDate!.monthName}${date.lunarDate!.dayName}',
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF059669),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      );
+    } else if (settings.primaryCalendar == CalendarType.tibetan && 
+               date.tibetanDate != null &&
+               settings.showTibetanCalendar) {
+      widgets.add(
+        Container(
+          margin: const EdgeInsets.only(top: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFF8F00).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            '藏历 ${date.tibetanDate!.month}月${date.tibetanDate!.day}日',
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFFE65100),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // 如果显示农历但不是主历法，额外显示农历
+    if (settings.primaryCalendar != CalendarType.lunar && 
+        date.lunarDate != null &&
+        settings.showLunarCalendar) {
+      widgets.add(
+        Container(
+          margin: const EdgeInsets.only(top: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFF10B981).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            '农历 ${date.lunarDate!.monthName}${date.lunarDate!.dayName}',
+            style: const TextStyle(
+              fontSize: 11,
+              color: Color(0xFF059669),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // 如果显示藏历但不是主历法，额外显示藏历
+    if (settings.primaryCalendar != CalendarType.tibetan && 
+        date.tibetanDate != null &&
+        settings.showTibetanCalendar) {
+      widgets.add(
+        Container(
+          margin: const EdgeInsets.only(top: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFF8F00).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            '藏历 ${date.tibetanDate!.month}月${date.tibetanDate!.day}日',
+            style: const TextStyle(
+              fontSize: 11,
+              color: Color(0xFFE65100),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return widgets;
   }
 
   Widget _buildFestivalsSection(List<Festival> festivals) {

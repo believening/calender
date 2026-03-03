@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../../core/plugin_manager/plugin_manager.dart';
+import '../../core/providers/calendar_settings_provider.dart';
 import '../../plugins/lunar_calendar/lunar_calendar_plugin.dart';
 import '../../plugins/tibetan_calendar/tibetan_calendar_plugin.dart';
 import '../../models/calendar_models.dart';
@@ -7,6 +8,7 @@ import '../../models/calendar_models.dart';
 /// 日历视图模型
 class CalendarViewModel extends ChangeNotifier {
   final PluginManager _pluginManager = PluginManager();
+  final CalendarSettingsProvider _settings;
 
   DateTime _selectedDate = DateTime.now();
   DateTime _currentMonth = DateTime.now();
@@ -14,7 +16,8 @@ class CalendarViewModel extends ChangeNotifier {
   CalendarDate? _selectedCalendarDate;
   List<Festival> _monthFestivals = [];
 
-  CalendarViewModel() {
+  CalendarViewModel({CalendarSettingsProvider? settings}) 
+      : _settings = settings ?? CalendarSettingsProvider() {
     _initPlugins();
     _loadMonthData();
   }
@@ -26,6 +29,7 @@ class CalendarViewModel extends ChangeNotifier {
   CalendarDate? get selectedCalendarDate => _selectedCalendarDate;
   List<Festival> get monthFestivals => _monthFestivals;
   PluginManager get pluginManager => _pluginManager;
+  CalendarSettingsProvider get settings => _settings;
 
   void _initPlugins() {
     _pluginManager.registerPlugin(LunarCalendarPlugin());
@@ -124,4 +128,61 @@ class CalendarViewModel extends ChangeNotifier {
 
   /// 获取星期的名称
   static const List<String> weekdays = ['一', '二', '三', '四', '五', '六', '日'];
+
+  /// 获取日期单元格的显示文本（根据主历法）
+  String getDateCellText(CalendarDate calendarDate) {
+    switch (_settings.primaryCalendar) {
+      case CalendarType.lunar:
+        if (calendarDate.lunarDate != null) {
+          return _getLunarDayText(calendarDate.lunarDate!);
+        }
+        break;
+      case CalendarType.tibetan:
+        if (calendarDate.tibetanDate != null) {
+          return _getTibetanDayText(calendarDate.tibetanDate!);
+        }
+        break;
+      case CalendarType.solar:
+      case CalendarType.islamic:
+      case CalendarType.dai:
+      case CalendarType.yi:
+        // 暂时不支持，回退到农历
+        if (calendarDate.lunarDate != null) {
+          return _getLunarDayText(calendarDate.lunarDate!);
+        }
+        break;
+    }
+    return '';
+  }
+
+  /// 获取农历日期显示文本
+  String _getLunarDayText(LunarDate lunarDate) {
+    if (lunarDate.day == 1) {
+      return lunarDate.monthName ?? '初一';
+    }
+    return lunarDate.dayName ?? '${lunarDate.day}';
+  }
+
+  /// 获取藏历日期显示文本
+  String _getTibetanDayText(TibetanDate tibetanDate) {
+    if (tibetanDate.day == 1) {
+      return tibetanDate.monthNameChinese ?? '初一';
+    }
+    return tibetanDate.dayNameChinese ?? '${tibetanDate.day}';
+  }
+
+  /// 获取年份信息卡片显示文本（根据主历法）
+  String getYearInfoText(CalendarDate calendarDate) {
+    switch (_settings.primaryCalendar) {
+      case CalendarType.lunar:
+        return calendarDate.lunarDate?.yearName ?? '';
+      case CalendarType.tibetan:
+        return calendarDate.tibetanDate?.yearElement ?? '';
+      case CalendarType.solar:
+      case CalendarType.islamic:
+      case CalendarType.dai:
+      case CalendarType.yi:
+        return calendarDate.lunarDate?.yearName ?? '';
+    }
+  }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'core/providers/locale_provider.dart';
+import 'core/providers/calendar_settings_provider.dart';
 import 'ui/views/calendar_view.dart';
 
 void main() {
@@ -16,9 +17,10 @@ class MultiCalendarApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
+        ChangeNotifierProvider(create: (_) => CalendarSettingsProvider()),
       ],
-      child: Consumer<LocaleProvider>(
-        builder: (context, localeProvider, _) {
+      child: Consumer2<LocaleProvider, CalendarSettingsProvider>(
+        builder: (context, localeProvider, settingsProvider, _) {
           return MaterialApp(
             title: '多民族日历',
             debugShowCheckedModeBanner: false,

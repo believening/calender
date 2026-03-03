@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/providers/locale_provider.dart';
+import '../../core/providers/calendar_settings_provider.dart';
+import '../../models/calendar_models.dart';
 
 /// 设置页面
 class SettingsView extends StatelessWidget {
@@ -153,37 +155,89 @@ class SettingsView extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        children: [
-          _buildSettingTile(
-            Icons.calendar_today,
-            '显示农历',
-            true,
-            (value) {},
-          ),
-          _buildDivider(),
-          _buildSettingTile(
-            Icons.star,
-            '显示藏历',
-            true,
-            (value) {},
-          ),
-          _buildDivider(),
-          _buildSettingTile(
-            Icons.celebration,
-            '显示节日',
-            true,
-            (value) {},
-          ),
-          _buildDivider(),
-          _buildSettingTile(
-            Icons.auto_awesome,
-            '显示宜忌',
-            true,
-            (value) {},
-          ),
-        ],
+      child: Consumer<CalendarSettingsProvider>(
+        builder: (context, settings, _) => Column(
+          children: [
+            // 主历法选择
+            _buildPrimaryCalendarSelector(context, settings),
+            _buildDivider(),
+            _buildSettingTile(
+              Icons.water_drop,
+              '显示农历',
+              settings.showLunarCalendar,
+              settings.toggleLunarCalendar,
+            ),
+            _buildDivider(),
+            _buildSettingTile(
+              Icons.star,
+              '显示藏历',
+              settings.showTibetanCalendar,
+              settings.toggleTibetanCalendar,
+            ),
+            _buildDivider(),
+            _buildSettingTile(
+              Icons.celebration,
+              '显示节日',
+              settings.showFestivals,
+              settings.toggleFestivals,
+            ),
+            _buildDivider(),
+            _buildSettingTile(
+              Icons.auto_awesome,
+              '显示宜忌',
+              settings.showDailyInfo,
+              settings.toggleDailyInfo,
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  /// 主历法选择器
+  Widget _buildPrimaryCalendarSelector(BuildContext context, CalendarSettingsProvider settings) {
+    return ExpansionTile(
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: const Color(0xFF6B5B95).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(Icons.calendar_today, color: Color(0xFF6B5B95), size: 20),
+      ),
+      title: const Text('主历法', style: TextStyle(fontWeight: FontWeight.w500)),
+      subtitle: Text(
+        CalendarSettingsProvider.getCalendarTypeName(settings.primaryCalendar),
+        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+      ),
+      children: CalendarSettingsProvider.supportedCalendars.map((type) {
+        final isSelected = settings.primaryCalendar == type;
+        return RadioListTile<CalendarType>(
+          title: Row(
+            children: [
+              Text(
+                CalendarSettingsProvider.getCalendarTypeIcon(type),
+                style: const TextStyle(fontSize: 18),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                CalendarSettingsProvider.getCalendarTypeName(type),
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+          value: type,
+          groupValue: settings.primaryCalendar,
+          activeColor: const Color(0xFF6B5B95),
+          selected: isSelected,
+          onChanged: (value) {
+            if (value != null) {
+              settings.setPrimaryCalendar(value);
+            }
+          },
+        );
+      }).toList(),
     );
   }
 
