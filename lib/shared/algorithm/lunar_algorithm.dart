@@ -34,7 +34,7 @@ class LunarAlgorithm {
     int lunarMonth = 1;
     int monthDays = 0;
 
-    for (int i = 1; i <= 12 && offset > 0; i++) {
+    for (int i = 1; i <= 12 && offset >= 0; i++) {
       // 闰月
       if (leapMonth > 0 && i == leapMonth + 1 && !isLeap) {
         i--;
