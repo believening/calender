@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.2] - 2026-03-04
+
+### Fixed
+- 🐛 **修复 BottomSheet 中无法访问 Provider 的问题** - 修复部署失败
+  - BottomSheet 的 builder context 无法访问顶层的 Provider
+  - 使用 MultiProvider + ChangeNotifierProvider.value 重新提供 Provider 实例
+  - Consumer2 现在可以正常工作，UI 会响应设置变更
+
 ## [1.2.1] - 2026-03-03
 
 ### Fixed
