@@ -1144,7 +1144,7 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
           
           // 历法设置
           _buildSectionTitle('历法设置'),
-          _buildCalendarSection(settingsProvider),
+          _buildCalendarSettingsSection(settingsProvider),
           const SizedBox(height: 24),
           
           // 插件管理
@@ -1240,7 +1240,7 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
     }
   }
 
-  Widget _buildCalendarSection(CalendarSettingsProvider settings) {
+  Widget _buildCalendarSettingsSection(CalendarSettingsProvider settings) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
