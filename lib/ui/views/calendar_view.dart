@@ -1077,42 +1077,52 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
 
   /// 显示设置面板
   void _showSettingsSheet(BuildContext context) {
+    // 在打开 BottomSheet 之前获取 Provider 引用
+    final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
+    final settingsProvider = Provider.of<CalendarSettingsProvider>(context, listen: false);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
+      builder: (context) => MultiProvider(
+        providers: [
+          ChangeNotifierProvider<LocaleProvider>.value(value: localeProvider),
+          ChangeNotifierProvider<CalendarSettingsProvider>.value(value: settingsProvider),
+        ],
+        child: DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (context, scrollController) => Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              Expanded(
-                child: _buildSettingsContent(context, scrollController),
-              ),
-            ],
+                Expanded(
+                  child: _buildSettingsContent(scrollController),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildSettingsContent(BuildContext context, ScrollController scrollController) {
+  Widget _buildSettingsContent(ScrollController scrollController) {
     return Consumer2<LocaleProvider, CalendarSettingsProvider>(
       builder: (context, localeProvider, settingsProvider, _) => ListView(
         controller: scrollController,
