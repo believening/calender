@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.3] - 2026-03-04
+
+### Fixed
+- 🐛 **修复重复的方法名导致的编译错误**
+  - 错误：`_buildCalendarSection` is already declared in this scope
+  - 将设置面板中的方法重命名为 `_buildCalendarSettingsSection`
+  - 验证通过 ✅ GitHub Actions 构建成功
+
 ## [1.2.2] - 2026-03-04
 
 ### Fixed
