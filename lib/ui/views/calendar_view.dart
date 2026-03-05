@@ -54,7 +54,6 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
                     opacity: _animationController,
                     child: Column(
                       children: [
-                        _buildYearInfoCard(vm, settings),
                         _buildCalendarSection(vm, settings),
                         _buildSelectedDateSection(vm, settings),
                         const SizedBox(height: 100),
@@ -71,272 +70,28 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
     );
   }
 
-  /// 现代化 AppBar
+  /// 极简 AppBar - 只保留设置按钮
   Widget _buildAppBar(BuildContext context, CalendarViewModel vm) {
     return SliverAppBar(
-      expandedHeight: 120,
       floating: true,
       pinned: true,
       elevation: 0,
       backgroundColor: Colors.transparent,
-      flexibleSpace: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color(0xFF8B5CF6).withOpacity(0.95),
-              const Color(0xFFA78BFA).withOpacity(0.9),
-            ],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF8B5CF6).withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: FlexibleSpaceBar(
-          title: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.calendar_month, color: Colors.white, size: 18),
-                    const SizedBox(width: 8),
-                    Text(
-                      vm.monthTitle,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          centerTitle: true,
-        ),
-      ),
+      leading: const SizedBox.shrink(), // 移除返回按钮
       actions: [
         IconButton(
           icon: Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: const Color(0xFFEDE9FE),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.settings_outlined, color: Colors.white, size: 20),
+            child: const Icon(Icons.settings_outlined, color: Color(0xFF7C3AED), size: 20),
           ),
           onPressed: () => _showSettingsSheet(context),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 16),
       ],
-    );
-  }
-
-  /// 年份信息卡片（根据主历法显示）
-  Widget _buildYearInfoCard(CalendarViewModel vm, CalendarSettingsProvider settings) {
-    final selectedDate = vm.selectedCalendarDate;
-    if (selectedDate == null) return const SizedBox.shrink();
-
-    final primaryCalendar = settings.primaryCalendar;
-    String yearInfo = '';
-    String monthDayInfo = '';
-    String? extraInfo;
-    bool isSpecial = false;
-
-    // 根据主历法显示对应信息
-    switch (primaryCalendar) {
-      case CalendarType.lunar:
-        if (selectedDate.lunarDate != null) {
-          final lunar = selectedDate.lunarDate!;
-          yearInfo = lunar.yearName ?? '';
-          monthDayInfo = '农历 ${lunar.monthName}${lunar.dayName}';
-          extraInfo = lunar.zodiac != null ? '${lunar.zodiac}年' : null;
-        }
-        break;
-      case CalendarType.tibetan:
-        if (selectedDate.tibetanDate != null) {
-          final tibetan = selectedDate.tibetanDate!;
-          yearInfo = tibetan.yearElement ?? '';
-          monthDayInfo = '藏历 ${tibetan.month}月${tibetan.day}日';
-          extraInfo = tibetan.monthNameTibetan;
-          
-          // 检查殊胜日
-          if (tibetan.day == 1 || tibetan.day == 8 || 
-              tibetan.day == 10 || tibetan.day == 15 ||
-              tibetan.day == 25 || tibetan.day == 30) {
-            isSpecial = true;
-          }
-        }
-        break;
-      case CalendarType.solar:
-      case CalendarType.islamic:
-      case CalendarType.dai:
-      case CalendarType.yi:
-        // 暂不支持，回退到农历
-        if (selectedDate.lunarDate != null) {
-          final lunar = selectedDate.lunarDate!;
-          yearInfo = lunar.yearName ?? '';
-          monthDayInfo = '农历 ${lunar.monthName}${lunar.dayName}';
-        }
-        break;
-    }
-
-    if (yearInfo.isEmpty && monthDayInfo.isEmpty) return const SizedBox.shrink();
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: primaryCalendar == CalendarType.tibetan
-              ? [
-                  const Color(0xFFFFF8E1),
-                  const Color(0xFFFFECB3),
-                ]
-              : [
-                  const Color(0xFFE8F5E9),
-                  const Color(0xFFC8E6C9),
-                ],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: (primaryCalendar == CalendarType.tibetan
-                    ? const Color(0xFFFFB300)
-                    : const Color(0xFF4CAF50))
-                .withOpacity(0.15),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: (primaryCalendar == CalendarType.tibetan
-                          ? const Color(0xFFFFB300)
-                          : const Color(0xFF4CAF50))
-                      .withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  primaryCalendar == CalendarType.tibetan
-                      ? Icons.auto_awesome
-                      : Icons.nights_stay,
-                  color: primaryCalendar == CalendarType.tibetan
-                      ? const Color(0xFFFF8F00)
-                      : const Color(0xFF2E7D32),
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      yearInfo,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF5D4037),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      monthDayInfo,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.brown[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (extraInfo != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: (primaryCalendar == CalendarType.tibetan
-                            ? const Color(0xFFFFB300)
-                            : const Color(0xFF4CAF50))
-                        .withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    extraInfo,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: const Color(0xFF5D4037),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          
-          // 藏历特殊标记（缺日/重日）
-          if (primaryCalendar == CalendarType.tibetan && 
-              selectedDate.tibetanDate != null &&
-              (selectedDate.tibetanDate!.isMissingDay || 
-               selectedDate.tibetanDate!.isDoubleday))
-            Container(
-              margin: const EdgeInsets.only(top: 14),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: selectedDate.tibetanDate!.isMissingDay 
-                    ? const Color(0xFFEF5350).withOpacity(0.1)
-                    : const Color(0xFF4CAF50).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    selectedDate.tibetanDate!.isMissingDay 
-                        ? Icons.remove_circle_outline 
-                        : Icons.add_circle_outline,
-                    size: 16,
-                    color: selectedDate.tibetanDate!.isMissingDay 
-                        ? const Color(0xFFEF5350)
-                        : const Color(0xFF4CAF50),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    selectedDate.tibetanDate!.isMissingDay ? '缺日' : '重日',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: selectedDate.tibetanDate!.isMissingDay 
-                          ? const Color(0xFFEF5350)
-                          : const Color(0xFF4CAF50),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
     );
   }
 
@@ -370,7 +125,7 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
     );
   }
 
-  /// 月份导航
+  /// 月份导航 - 极简设计，只显示月份和导航按钮
   Widget _buildMonthNavigation(CalendarViewModel vm, CalendarSettingsProvider settings) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
@@ -378,36 +133,13 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _buildNavButton(Icons.chevron_left_rounded, vm.previousMonth),
-          Row(
-            children: [
-              Text(
-                vm.monthTitle,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1F2937),
-                ),
-              ),
-              // 显示主历法的年份信息
-              if (vm.selectedCalendarDate != null) ...[
-                const SizedBox(width: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEDE9FE),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    vm.getYearInfoText(vm.selectedCalendarDate!),
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Color(0xFF7C3AED),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ],
+          Text(
+            vm.monthTitle,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1F2937),
+            ),
           ),
           _buildNavButton(Icons.chevron_right_rounded, vm.nextMonth),
         ],
@@ -634,13 +366,14 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
     );
   }
 
-  /// 选中日期详情区域
+  /// 选中日期详情区域 - 扁平化设计
   Widget _buildSelectedDateSection(CalendarViewModel vm, CalendarSettingsProvider settings) {
     final selectedDate = vm.selectedCalendarDate;
     if (selectedDate == null) return const SizedBox.shrink();
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(28),
@@ -658,185 +391,90 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildDateHeader(selectedDate, settings),
+          const SizedBox(height: 16),
           if (settings.showFestivals && selectedDate.festivals.isNotEmpty)
             _buildFestivalsSection(selectedDate.festivals),
           if (settings.showDailyInfo && selectedDate.dailyInfo != null)
             _buildDailyInfoSection(selectedDate.dailyInfo!),
-          const SizedBox(height: 16),
         ],
       ),
     );
   }
 
+  /// 扁平化日期头部 - 紧凑的信息展示
   Widget _buildDateHeader(CalendarDate date, CalendarSettingsProvider settings) {
     final solarDate = date.solarDate;
+    final lunarDate = date.lunarDate;
+    final tibetanDate = date.tibetanDate;
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: Row(
-        children: [
-          // 大日期数字
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF8B5CF6).withOpacity(0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                '${solarDate.day}',
-                style: const TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 公历日期和星期
+        Text(
+          '${solarDate.month}月${solarDate.day}日  星期${CalendarViewModel.weekdays[solarDate.weekday - 1]}',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1F2937),
           ),
-          const SizedBox(width: 18),
-          // 日期详情
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${solarDate.year}年${solarDate.month}月',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1F2937),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '星期${CalendarViewModel.weekdays[solarDate.weekday - 1]}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF6B7280),
-                  ),
-                ),
-                // 根据设置显示历法信息
-                ..._buildCalendarInfo(date, settings),
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 12),
+
+        // 历法信息行
+        Wrap(
+          spacing: 12,
+          runSpacing: 8,
+          children: [
+            // 主历法（带年份）
+            if (settings.primaryCalendar == CalendarType.lunar && lunarDate != null && settings.showLunarCalendar)
+              _buildCalendarChip(
+                '🌸 ${lunarDate.yearName ?? ''} ${lunarDate.monthName}${lunarDate.dayName}',
+                const Color(0xFF10B981),
+              ),
+            if (settings.primaryCalendar == CalendarType.tibetan && tibetanDate != null && settings.showTibetanCalendar)
+              _buildCalendarChip(
+                '🏔️ ${tibetanDate.yearElement ?? ''} ${tibetanDate.month}月${tibetanDate.day}日',
+                const Color(0xFFFF8F00),
+              ),
+
+            // 辅助历法（不带年份，简洁显示）
+            if (settings.primaryCalendar != CalendarType.lunar && lunarDate != null && settings.showLunarCalendar)
+              _buildCalendarChip(
+                '🌸 ${lunarDate.monthName}${lunarDate.dayName}',
+                const Color(0xFF10B981),
+              ),
+            if (settings.primaryCalendar != CalendarType.tibetan && tibetanDate != null && settings.showTibetanCalendar)
+              _buildCalendarChip(
+                '🏔️ ${tibetanDate.month}月${tibetanDate.day}日',
+                const Color(0xFFFF8F00),
+              ),
+          ],
+        ),
+      ],
     );
   }
 
-  /// 根据设置构建历法信息显示
-  List<Widget> _buildCalendarInfo(CalendarDate date, CalendarSettingsProvider settings) {
-    List<Widget> widgets = [];
-
-    // 显示主历法信息
-    if (settings.primaryCalendar == CalendarType.lunar && 
-        date.lunarDate != null &&
-        settings.showLunarCalendar) {
-      widgets.add(
-        Container(
-          margin: const EdgeInsets.only(top: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: const Color(0xFF10B981).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            '农历 ${date.lunarDate!.monthName}${date.lunarDate!.dayName}',
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF059669),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+  /// 历法信息小标签
+  Widget _buildCalendarChip(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 13,
+          color: color.withOpacity(0.9),
+          fontWeight: FontWeight.w500,
         ),
-      );
-    } else if (settings.primaryCalendar == CalendarType.tibetan && 
-               date.tibetanDate != null &&
-               settings.showTibetanCalendar) {
-      widgets.add(
-        Container(
-          margin: const EdgeInsets.only(top: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFF8F00).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            '藏历 ${date.tibetanDate!.month}月${date.tibetanDate!.day}日',
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFFE65100),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      );
-    }
-
-    // 如果显示农历但不是主历法，额外显示农历
-    if (settings.primaryCalendar != CalendarType.lunar && 
-        date.lunarDate != null &&
-        settings.showLunarCalendar) {
-      widgets.add(
-        Container(
-          margin: const EdgeInsets.only(top: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: const Color(0xFF10B981).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            '农历 ${date.lunarDate!.monthName}${date.lunarDate!.dayName}',
-            style: const TextStyle(
-              fontSize: 11,
-              color: Color(0xFF059669),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      );
-    }
-
-    // 如果显示藏历但不是主历法，额外显示藏历
-    if (settings.primaryCalendar != CalendarType.tibetan && 
-        date.tibetanDate != null &&
-        settings.showTibetanCalendar) {
-      widgets.add(
-        Container(
-          margin: const EdgeInsets.only(top: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFF8F00).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            '藏历 ${date.tibetanDate!.month}月${date.tibetanDate!.day}日',
-            style: const TextStyle(
-              fontSize: 11,
-              color: Color(0xFFE65100),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      );
-    }
-
-    return widgets;
+      ),
+    );
   }
 
   Widget _buildFestivalsSection(List<Festival> festivals) {

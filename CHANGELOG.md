@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2026-03-05
+
+### Changed
+- 🎨 **布局重构 - 极简设计方案 C**
+  - 移除大型渐变 AppBar，改为极简设计仅保留设置按钮
+  - 移除年份信息卡片，消除与日历网格的信息重复
+  - 简化月份导航行，去掉冗余的年份标签
+  - 扁平化选中日期详情区域，历法信息以标签形式横向排列
+
+### Improved
+- ✨ **信息层次优化**
+  - 消除多处重复的历法信息显示
+  - 选中日期详情区域聚合显示所有历法信息
+  - 历法信息使用 emoji 图标 + 标签设计，视觉更清晰
+
+### Removed
+- 🗑️ **删除冗余组件**
+  - `_buildYearInfoCard` 方法及其相关 UI
+  - `_buildCalendarInfo` 方法（功能合并到日期头部）
+  - AppBar 中的月份标题显示
+
 ## [1.3.0] - 2026-03-05
 
 ### Changed
