@@ -27,7 +27,7 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 250),
     );
     _animationController.forward();
   }
@@ -44,7 +44,7 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
       builder: (context, settings, _) => ChangeNotifierProvider(
         create: (_) => CalendarViewModel(settings: settings)..selectDate(DateTime.now()),
         child: Scaffold(
-          backgroundColor: const Color(0xFFF8F7FC),
+          backgroundColor: const Color(0xFFFAF5FF),
           body: Consumer<CalendarViewModel>(
             builder: (context, vm, _) => CustomScrollView(
               slivers: [
@@ -85,10 +85,17 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF6B5B95).withOpacity(0.95),
-              const Color(0xFF8B7BC8).withOpacity(0.9),
+              const Color(0xFF8B5CF6).withOpacity(0.95),
+              const Color(0xFFA78BFA).withOpacity(0.9),
             ],
           ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF8B5CF6).withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: FlexibleSpaceBar(
           title: Row(
@@ -342,9 +349,14 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6B5B95).withOpacity(0.08),
-            blurRadius: 30,
-            offset: const Offset(0, 10),
+            color: const Color(0xFF8B5CF6).withOpacity(0.12),
+            blurRadius: 32,
+            offset: const Offset(0, 12),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -373,7 +385,7 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D2438),
+                  color: Color(0xFF1F2937),
                 ),
               ),
               // 显示主历法的年份信息
@@ -382,14 +394,14 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6B5B95).withOpacity(0.1),
+                    color: const Color(0xFFEDE9FE),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     vm.getYearInfoText(vm.selectedCalendarDate!),
                     style: const TextStyle(
                       fontSize: 11,
-                      color: Color(0xFF6B5B95),
+                      color: Color(0xFF7C3AED),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -405,16 +417,18 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
 
   Widget _buildNavButton(IconData icon, VoidCallback onPressed) {
     return Material(
-      color: const Color(0xFFF5F3FF),
+      color: const Color(0xFFEDE9FE),
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: onPressed,
+        splashColor: const Color(0xFF8B5CF6).withOpacity(0.2),
+        highlightColor: const Color(0xFF8B5CF6).withOpacity(0.1),
         child: Container(
           padding: const EdgeInsets.all(10),
           child: Icon(
             icon,
-            color: const Color(0xFF6B5B95),
+            color: const Color(0xFF7C3AED),
             size: 24,
           ),
         ),
@@ -499,36 +513,49 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
     return GestureDetector(
       onTap: () => vm.selectDate(date),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 250),
         curve: Curves.easeOutCubic,
         decoration: BoxDecoration(
           gradient: isSelected
               ? const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF6B5B95), Color(0xFF8B7BC8)],
+                  colors: [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
                 )
               : isToday
                   ? LinearGradient(
                       colors: [
-                        const Color(0xFF6B5B95).withOpacity(0.15),
-                        const Color(0xFF8B7BC8).withOpacity(0.1),
+                        const Color(0xFF8B5CF6).withOpacity(0.15),
+                        const Color(0xFFA78BFA).withOpacity(0.1),
                       ],
                     )
                   : null,
           borderRadius: BorderRadius.circular(16),
           border: isToday && !isSelected
-              ? Border.all(color: const Color(0xFF6B5B95), width: 2)
+              ? Border.all(color: const Color(0xFF8B5CF6), width: 2)
               : null,
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: const Color(0xFF6B5B95).withOpacity(0.4),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  )
+                    color: const Color(0xFF8B5CF6).withOpacity(0.5),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                  BoxShadow(
+                    color: const Color(0xFF8B5CF6).withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
                 ]
-              : null,
+              : isToday
+                  ? [
+                      BoxShadow(
+                        color: const Color(0xFF8B5CF6).withOpacity(0.15),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null,
         ),
         child: Stack(
           children: [
@@ -619,9 +646,14 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6B5B95).withOpacity(0.08),
-            blurRadius: 30,
-            offset: const Offset(0, 10),
+            color: const Color(0xFF8B5CF6).withOpacity(0.12),
+            blurRadius: 32,
+            offset: const Offset(0, 12),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -653,12 +685,12 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF6B5B95), Color(0xFF8B7BC8)],
+                colors: [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
               ),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF6B5B95).withOpacity(0.3),
+                  color: const Color(0xFF8B5CF6).withOpacity(0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
                 ),
@@ -912,13 +944,13 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6B5B95).withOpacity(0.1),
+                  color: const Color(0xFF8B5CF6).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.auto_awesome,
                   size: 16,
-                  color: Color(0xFF6B5B95),
+                  color: Color(0xFF8B5CF6),
                 ),
               ),
               const SizedBox(width: 10),
@@ -1065,7 +1097,9 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
     return Consumer<CalendarViewModel>(
       builder: (context, vm, _) => FloatingActionButton.extended(
         onPressed: vm.goToToday,
-        backgroundColor: const Color(0xFF6B5B95),
+        backgroundColor: const Color(0xFF8B5CF6),
+        elevation: 8,
+        highlightElevation: 12,
         icon: const Icon(Icons.today_rounded, color: Colors.white),
         label: const Text(
           '今天',
@@ -1177,7 +1211,7 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6B5B95).withOpacity(0.06),
+            color: const Color(0xFF8B5CF6).withOpacity(0.08),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -1195,7 +1229,7 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
               height: 40,
               decoration: BoxDecoration(
                 color: isSelected 
-                    ? const Color(0xFF6B5B95).withOpacity(0.1)
+                    ? const Color(0xFFEDE9FE)
                     : const Color(0xFFF3F4F6),
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -1214,7 +1248,7 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
                 ? Container(
                     padding: const EdgeInsets.all(6),
                     decoration: const BoxDecoration(
-                      color: Color(0xFF6B5B95),
+                      color: Color(0xFF8B5CF6),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.check, color: Colors.white, size: 16),
@@ -1247,7 +1281,7 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6B5B95).withOpacity(0.06),
+            color: const Color(0xFF8B5CF6).withOpacity(0.08),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
@@ -1296,10 +1330,10 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: const Color(0xFF6B5B95).withOpacity(0.1),
+          color: const Color(0xFF8B5CF6).withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Icon(Icons.calendar_today, color: Color(0xFF6B5B95), size: 20),
+        child: const Icon(Icons.calendar_today, color: Color(0xFF8B5CF6), size: 20),
       ),
       title: const Text('主历法', style: TextStyle(fontWeight: FontWeight.w500)),
       subtitle: Text(
@@ -1324,7 +1358,7 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
           ),
           value: type,
           groupValue: settings.primaryCalendar,
-          activeColor: const Color(0xFF6B5B95),
+          activeColor: const Color(0xFF8B5CF6),
           selected: isSelected,
           onChanged: (value) {
             if (value != null) {
@@ -1350,13 +1384,13 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
           color: const Color(0xFFF5F3FF),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, color: const Color(0xFF6B5B95), size: 20),
+        child: Icon(icon, color: const Color(0xFF8B5CF6), size: 20),
       ),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeColor: const Color(0xFF6B5B95),
+        activeColor: const Color(0xFF8B5CF6),
       ),
     );
   }
@@ -1368,7 +1402,7 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6B5B95).withOpacity(0.06),
+            color: const Color(0xFF8B5CF6).withOpacity(0.08),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),

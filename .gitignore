@@ -101,3 +101,17 @@ iOSInjectionProject/
 # Claude Code
 CLAUDE.md
 .claude/
+skills-lock.json
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+.agents/
+
+# Other
+.DS_Store

@@ -11,7 +11,7 @@ class SettingsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F7FC),
+      backgroundColor: const Color(0xFFFAF5FF),
       appBar: AppBar(
         title: const Text('设置'),
         backgroundColor: Colors.transparent,
@@ -19,19 +19,20 @@ class SettingsView extends StatelessWidget {
         foregroundColor: const Color(0xFF1F2937),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const SizedBox(height: 8),
             _buildSectionTitle('语言设置'),
             _buildLanguageSection(context),
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
             _buildSectionTitle('历法设置'),
             _buildCalendarSection(context),
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
             _buildSectionTitle('插件管理'),
             _buildPluginsSection(context),
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
             _buildSectionTitle('关于'),
             _buildAboutSection(context),
           ],
@@ -49,6 +50,7 @@ class SettingsView extends StatelessWidget {
           fontSize: 14,
           fontWeight: FontWeight.w600,
           color: Color(0xFF6B7280),
+          letterSpacing: 0.5,
         ),
       ),
     );
@@ -61,9 +63,14 @@ class SettingsView extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6B5B95).withOpacity(0.06),
-            blurRadius: 20,
+            color: const Color(0xFF8B5CF6).withOpacity(0.08),
+            blurRadius: 24,
             offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -99,8 +106,8 @@ class SettingsView extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: isSelected 
-              ? const Color(0xFF6B5B95).withOpacity(0.1)
+          color: isSelected
+              ? const Color(0xFFEDE9FE)
               : const Color(0xFFF3F4F6),
           borderRadius: BorderRadius.circular(12),
         ),
@@ -119,7 +126,7 @@ class SettingsView extends StatelessWidget {
           ? Container(
               padding: const EdgeInsets.all(6),
               decoration: const BoxDecoration(
-                color: Color(0xFF6B5B95),
+                color: Color(0xFF8B5CF6),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.check, color: Colors.white, size: 16),
@@ -149,9 +156,14 @@ class SettingsView extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6B5B95).withOpacity(0.06),
-            blurRadius: 20,
+            color: const Color(0xFF8B5CF6).withOpacity(0.08),
+            blurRadius: 24,
             offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -201,10 +213,10 @@ class SettingsView extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: const Color(0xFF6B5B95).withOpacity(0.1),
+          color: const Color(0xFF8B5CF6).withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Icon(Icons.calendar_today, color: Color(0xFF6B5B95), size: 20),
+        child: const Icon(Icons.calendar_today, color: Color(0xFF8B5CF6), size: 20),
       ),
       title: const Text('主历法', style: TextStyle(fontWeight: FontWeight.w500)),
       subtitle: Text(
@@ -229,7 +241,7 @@ class SettingsView extends StatelessWidget {
           ),
           value: type,
           groupValue: settings.primaryCalendar,
-          activeColor: const Color(0xFF6B5B95),
+          activeColor: const Color(0xFF8B5CF6),
           selected: isSelected,
           onChanged: (value) {
             if (value != null) {
@@ -252,16 +264,17 @@ class SettingsView extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: const Color(0xFFF5F3FF),
+          color: const Color(0xFFEDE9FE),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, color: const Color(0xFF6B5B95), size: 20),
+        child: Icon(icon, color: const Color(0xFF7C3AED), size: 20),
       ),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeColor: const Color(0xFF6B5B95),
+        activeColor: const Color(0xFF8B5CF6),
+        activeTrackColor: const Color(0xFFEDE9FE),
       ),
     );
   }
@@ -277,9 +290,14 @@ class SettingsView extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6B5B95).withOpacity(0.06),
-            blurRadius: 20,
+            color: const Color(0xFF8B5CF6).withOpacity(0.08),
+            blurRadius: 24,
             offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -357,9 +375,14 @@ class SettingsView extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6B5B95).withOpacity(0.06),
-            blurRadius: 20,
+            color: const Color(0xFF8B5CF6).withOpacity(0.08),
+            blurRadius: 24,
             offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -373,7 +396,7 @@ class SettingsView extends StatelessWidget {
                 color: const Color(0xFFF5F3FF),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.info_outline, color: Color(0xFF6B5B95)),
+              child: const Icon(Icons.info_outline, color: Color(0xFF8B5CF6)),
             ),
             title: const Text('版本', style: TextStyle(fontWeight: FontWeight.w500)),
             subtitle: const Text('1.0.0'),
@@ -389,7 +412,7 @@ class SettingsView extends StatelessWidget {
                 color: const Color(0xFFF5F3FF),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.code, color: Color(0xFF6B5B95)),
+              child: const Icon(Icons.code, color: Color(0xFF8B5CF6)),
             ),
             title: const Text('开源许可', style: TextStyle(fontWeight: FontWeight.w500)),
             trailing: const Icon(Icons.chevron_right, color: Colors.grey),
@@ -423,7 +446,7 @@ class SettingsView extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(
           children: [
-            Icon(Icons.calendar_month, color: Color(0xFF6B5B95)),
+            Icon(Icons.calendar_month, color: Color(0xFF8B5CF6)),
             SizedBox(width: 10),
             Text('多民族日历'),
           ],
