@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-03-06
+
+### Added
+- ✨ **响应式设计支持** - 多端适配优化
+  - 新增 `ResponsiveHelper` 工具类，提供屏幕宽度检测和缩放因子计算
+  - 支持四种设备类型：Mobile (<600px)、Tablet (600-900px)、Desktop (900-1200px)、Large Desktop (>1200px)
+  - 自动缩放因子：1.0×、1.3×、1.6×、2.0×
+
+### Changed
+- 🎨 **所有 UI 元素响应式适配**
+  - 字体大小自动根据屏幕宽度缩放
+  - 间距（padding/margin）按比例调整
+  - 圆角半径自动缩放
+  - 图标尺寸自适应
+
+### Improved
+- 💻 **桌面端体验优化**
+  - 桌面端无需手动缩放浏览器（250%），字体大小自动协调
+  - 保持移动端原有体验的同时优化大屏显示
+  - 内容宽度限制，保持可读性
+
+### Technical
+- BuildContext 扩展方法，简化响应式 API 调用
+- 所有视图方法添加 BuildContext 参数支持响应式计算
+
 ## [1.4.0] - 2026-03-05
 
 ### Changed

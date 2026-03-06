@@ -4,6 +4,7 @@ import '../viewmodels/calendar_view_model.dart';
 import '../../models/calendar_models.dart';
 import '../../core/providers/calendar_settings_provider.dart';
 import '../../core/providers/locale_provider.dart';
+import '../../core/utils/responsive_helper.dart';
 
 /// 日历主视图 - 现代化设计
 /// 
@@ -54,8 +55,8 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
                     opacity: _animationController,
                     child: Column(
                       children: [
-                        _buildCalendarSection(vm, settings),
-                        _buildSelectedDateSection(vm, settings),
+                        _buildCalendarSection(context, vm, settings),
+                        _buildSelectedDateSection(context, vm, settings),
                         const SizedBox(height: 100),
                       ],
                     ),
@@ -95,13 +96,17 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
     );
   }
 
-  /// 日历主体区域
-  Widget _buildCalendarSection(CalendarViewModel vm, CalendarSettingsProvider settings) {
+  /// 日历主体区域（响应式）
+  Widget _buildCalendarSection(BuildContext context, CalendarViewModel vm, CalendarSettingsProvider settings) {
+    final scale = context.scale;
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: EdgeInsets.symmetric(
+        horizontal: context.responsiveSpacing(16),
+        vertical: context.responsiveSpacing(8),
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(28 * scale),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF8B5CF6).withOpacity(0.12),
@@ -117,61 +122,70 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
       ),
       child: Column(
         children: [
-          _buildMonthNavigation(vm, settings),
-          _buildWeekdayHeader(),
-          _buildCalendarGrid(vm, settings),
+          _buildMonthNavigation(context, vm, settings),
+          _buildWeekdayHeader(context),
+          _buildCalendarGrid(context, vm, settings),
         ],
       ),
     );
   }
 
-  /// 月份导航 - 极简设计，只显示月份和导航按钮
-  Widget _buildMonthNavigation(CalendarViewModel vm, CalendarSettingsProvider settings) {
+  /// 月份导航 - 极简设计，只显示月份和导航按钮（响应式）
+  Widget _buildMonthNavigation(BuildContext context, CalendarViewModel vm, CalendarSettingsProvider settings) {
+    final scale = context.scale;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+      padding: context.responsivePadding(
+        horizontal: 20,
+        top: 20,
+        bottom: 12,
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildNavButton(Icons.chevron_left_rounded, vm.previousMonth),
+          _buildNavButton(context, Icons.chevron_left_rounded, vm.previousMonth),
           Text(
             vm.monthTitle,
-            style: const TextStyle(
-              fontSize: 20,
+            style: TextStyle(
+              fontSize: context.responsiveFontSize(20),
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1F2937),
+              color: const Color(0xFF1F2937),
             ),
           ),
-          _buildNavButton(Icons.chevron_right_rounded, vm.nextMonth),
+          _buildNavButton(context, Icons.chevron_right_rounded, vm.nextMonth),
         ],
       ),
     );
   }
 
-  Widget _buildNavButton(IconData icon, VoidCallback onPressed) {
+  Widget _buildNavButton(BuildContext context, IconData icon, VoidCallback onPressed) {
+    final scale = context.scale;
     return Material(
       color: const Color(0xFFEDE9FE),
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(14 * scale),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14 * scale),
         onTap: onPressed,
         splashColor: const Color(0xFF8B5CF6).withOpacity(0.2),
         highlightColor: const Color(0xFF8B5CF6).withOpacity(0.1),
         child: Container(
-          padding: const EdgeInsets.all(10),
+          padding: EdgeInsets.all(10 * scale),
           child: Icon(
             icon,
             color: const Color(0xFF7C3AED),
-            size: 24,
+            size: 24 * scale,
           ),
         ),
       ),
     );
   }
 
-  /// 星期头部
-  Widget _buildWeekdayHeader() {
+  /// 星期头部（响应式）
+  Widget _buildWeekdayHeader(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      padding: EdgeInsets.symmetric(
+        vertical: context.responsiveSpacing(12),
+        horizontal: context.responsiveSpacing(8),
+      ),
       child: Row(
         children: CalendarViewModel.weekdays.asMap().entries.map((entry) {
           final index = entry.key;
@@ -183,10 +197,10 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
                 day,
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: isWeekend 
+                  color: isWeekend
                       ? const Color(0xFFEF5350).withOpacity(0.7)
                       : const Color(0xFF6B7280),
-                  fontSize: 13,
+                  fontSize: context.responsiveFontSize(13),
                 ),
               ),
             ),
@@ -196,18 +210,24 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
     );
   }
 
-  /// 日历网格
-  Widget _buildCalendarGrid(CalendarViewModel vm, CalendarSettingsProvider settings) {
+  /// 日历网格（响应式）
+  Widget _buildCalendarGrid(BuildContext context, CalendarViewModel vm, CalendarSettingsProvider settings) {
+    final scale = context.scale;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+      padding: EdgeInsets.fromLTRB(
+        context.responsiveSpacing(12),
+        0,
+        context.responsiveSpacing(12),
+        context.responsiveSpacing(16),
+      ),
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 7,
           childAspectRatio: 1,
-          mainAxisSpacing: 6,
-          crossAxisSpacing: 6,
+          mainAxisSpacing: 6 * scale,
+          crossAxisSpacing: 6 * scale,
         ),
         itemCount: vm.monthDates.length,
         itemBuilder: (context, index) {
@@ -217,28 +237,29 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
     );
   }
 
-  /// 日期单元格
+  /// 日期单元格（响应式）
   Widget _buildDateCell(
     BuildContext context,
     CalendarViewModel vm,
     CalendarDate calendarDate,
     CalendarSettingsProvider settings,
   ) {
+    final scale = context.scale;
     final date = calendarDate.solarDate;
     final isToday = vm.isToday(date);
     final isSelected = vm.isSelected(date);
     final isCurrentMonth = vm.isCurrentMonth(date);
     final hasFestival = calendarDate.festivals.isNotEmpty && settings.showFestivals;
     final isWeekend = date.weekday == 6 || date.weekday == 7;
-    
+
     // 根据主历法获取日期文本
     final dateText = vm.getDateCellText(calendarDate);
-    
+
     // 检查殊胜日（仅藏历）
     final tibetanDate = calendarDate.tibetanDate;
     final isSpecialDay = settings.primaryCalendar == CalendarType.tibetan &&
-        tibetanDate != null && 
-        (tibetanDate.day == 1 || tibetanDate.day == 8 || 
+        tibetanDate != null &&
+        (tibetanDate.day == 1 || tibetanDate.day == 8 ||
          tibetanDate.day == 10 || tibetanDate.day == 15 ||
          tibetanDate.day == 25 || tibetanDate.day == 30);
 
@@ -262,7 +283,7 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
                       ],
                     )
                   : null,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(16 * scale),
           border: isToday && !isSelected
               ? Border.all(color: const Color(0xFF8B5CF6), width: 2)
               : null,
@@ -270,21 +291,21 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
               ? [
                   BoxShadow(
                     color: const Color(0xFF8B5CF6).withOpacity(0.5),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
+                    blurRadius: 16 * scale,
+                    offset: Offset(0, 6 * scale),
                   ),
                   BoxShadow(
                     color: const Color(0xFF8B5CF6).withOpacity(0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    blurRadius: 8 * scale,
+                    offset: Offset(0, 2 * scale),
                   ),
                 ]
               : isToday
                   ? [
                       BoxShadow(
                         color: const Color(0xFF8B5CF6).withOpacity(0.15),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+                        blurRadius: 8 * scale,
+                        offset: Offset(0, 2 * scale),
                       ),
                     ]
                   : null,
@@ -299,7 +320,7 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
                   Text(
                     '${date.day}',
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: context.responsiveFontSize(15),
                       fontWeight: isToday || isSelected
                           ? FontWeight.bold
                           : FontWeight.w500,
@@ -315,11 +336,11 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
                   // 主历法日期
                   if (dateText.isNotEmpty)
                     Padding(
-                      padding: const EdgeInsets.only(top: 2),
+                      padding: EdgeInsets.only(top: 2 * scale),
                       child: Text(
                         dateText,
                         style: TextStyle(
-                          fontSize: 9,
+                          fontSize: context.responsiveFontSize(9),
                           color: isSelected
                               ? Colors.white.withOpacity(0.8)
                               : isSpecialDay
@@ -337,11 +358,11 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
             // 节日/殊胜日标记
             if (hasFestival || isSpecialDay)
               Positioned(
-                top: 4,
-                right: 4,
+                top: 4 * scale,
+                right: 4 * scale,
                 child: Container(
-                  width: 6,
-                  height: 6,
+                  width: 6 * scale,
+                  height: 6 * scale,
                   decoration: BoxDecoration(
                     color: isSelected
                         ? Colors.white
@@ -351,10 +372,10 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: (isSpecialDay 
+                        color: (isSpecialDay
                             ? const Color(0xFFFF8F00)
                             : const Color(0xFFEF5350)).withOpacity(0.5),
-                        blurRadius: 4,
+                        blurRadius: 4 * scale,
                       ),
                     ],
                   ),
@@ -366,46 +387,53 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
     );
   }
 
-  /// 选中日期详情区域 - 扁平化设计
-  Widget _buildSelectedDateSection(CalendarViewModel vm, CalendarSettingsProvider settings) {
+  /// 选中日期详情区域 - 扁平化设计（响应式）
+  Widget _buildSelectedDateSection(BuildContext context, CalendarViewModel vm, CalendarSettingsProvider settings) {
     final selectedDate = vm.selectedCalendarDate;
     if (selectedDate == null) return const SizedBox.shrink();
 
+    final scale = context.scale;
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.fromLTRB(
+        context.responsiveSpacing(16),
+        context.responsiveSpacing(16),
+        context.responsiveSpacing(16),
+        0,
+      ),
+      padding: EdgeInsets.all(context.responsiveSpacing(20)),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(28 * scale),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF8B5CF6).withOpacity(0.12),
-            blurRadius: 32,
-            offset: const Offset(0, 12),
+            blurRadius: 32 * scale,
+            offset: Offset(0, 12 * scale),
           ),
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+            blurRadius: 8 * scale,
+            offset: Offset(0, 4 * scale),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildDateHeader(selectedDate, settings),
-          const SizedBox(height: 16),
+          _buildDateHeader(context, selectedDate, settings),
+          SizedBox(height: context.responsiveSpacing(16)),
           if (settings.showFestivals && selectedDate.festivals.isNotEmpty)
-            _buildFestivalsSection(selectedDate.festivals),
+            _buildFestivalsSection(context, selectedDate.festivals),
           if (settings.showDailyInfo && selectedDate.dailyInfo != null)
-            _buildDailyInfoSection(selectedDate.dailyInfo!),
+            _buildDailyInfoSection(context, selectedDate.dailyInfo!),
         ],
       ),
     );
   }
 
-  /// 扁平化日期头部 - 紧凑的信息展示
-  Widget _buildDateHeader(CalendarDate date, CalendarSettingsProvider settings) {
+  /// 扁平化日期头部 - 紧凑的信息展示（响应式）
+  Widget _buildDateHeader(BuildContext context, CalendarDate date, CalendarSettingsProvider settings) {
+    final scale = context.scale;
     final solarDate = date.solarDate;
     final lunarDate = date.lunarDate;
     final tibetanDate = date.tibetanDate;
@@ -416,27 +444,29 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
         // 公历日期和星期
         Text(
           '${solarDate.month}月${solarDate.day}日  星期${CalendarViewModel.weekdays[solarDate.weekday - 1]}',
-          style: const TextStyle(
-            fontSize: 16,
+          style: TextStyle(
+            fontSize: context.responsiveFontSize(16),
             fontWeight: FontWeight.w600,
-            color: Color(0xFF1F2937),
+            color: const Color(0xFF1F2937),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: context.responsiveSpacing(12)),
 
         // 历法信息行
         Wrap(
-          spacing: 12,
-          runSpacing: 8,
+          spacing: 12 * scale,
+          runSpacing: 8 * scale,
           children: [
             // 主历法（带年份）
             if (settings.primaryCalendar == CalendarType.lunar && lunarDate != null && settings.showLunarCalendar)
               _buildCalendarChip(
+                context,
                 '🌸 ${lunarDate.yearName ?? ''} ${lunarDate.monthName}${lunarDate.dayName}',
                 const Color(0xFF10B981),
               ),
             if (settings.primaryCalendar == CalendarType.tibetan && tibetanDate != null && settings.showTibetanCalendar)
               _buildCalendarChip(
+                context,
                 '🏔️ ${tibetanDate.yearElement ?? ''} ${tibetanDate.month}月${tibetanDate.day}日',
                 const Color(0xFFFF8F00),
               ),
@@ -444,11 +474,13 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
             // 辅助历法（不带年份，简洁显示）
             if (settings.primaryCalendar != CalendarType.lunar && lunarDate != null && settings.showLunarCalendar)
               _buildCalendarChip(
+                context,
                 '🌸 ${lunarDate.monthName}${lunarDate.dayName}',
                 const Color(0xFF10B981),
               ),
             if (settings.primaryCalendar != CalendarType.tibetan && tibetanDate != null && settings.showTibetanCalendar)
               _buildCalendarChip(
+                context,
                 '🏔️ ${tibetanDate.month}月${tibetanDate.day}日',
                 const Color(0xFFFF8F00),
               ),
@@ -458,18 +490,22 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
     );
   }
 
-  /// 历法信息小标签
-  Widget _buildCalendarChip(String text, Color color) {
+  /// 历法信息小标签（响应式）
+  Widget _buildCalendarChip(BuildContext context, String text, Color color) {
+    final scale = context.scale;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(
+        horizontal: 12 * scale,
+        vertical: 6 * scale,
+      ),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12 * scale),
       ),
       child: Text(
         text,
         style: TextStyle(
-          fontSize: 13,
+          fontSize: context.responsiveFontSize(13),
           color: color.withOpacity(0.9),
           fontWeight: FontWeight.w500,
         ),
@@ -477,59 +513,68 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildFestivalsSection(List<Festival> festivals) {
+  Widget _buildFestivalsSection(BuildContext context, List<Festival> festivals) {
+    final scale = context.scale;
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      padding: EdgeInsets.fromLTRB(
+        context.responsiveSpacing(20),
+        0,
+        context.responsiveSpacing(20),
+        context.responsiveSpacing(16),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: EdgeInsets.all(6 * scale),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEF5350).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(8 * scale),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.celebration_rounded,
-                  size: 16,
-                  color: Color(0xFFEF5350),
+                  size: 16 * scale,
+                  color: const Color(0xFFEF5350),
                 ),
               ),
-              const SizedBox(width: 10),
-              const Text(
+              SizedBox(width: 10 * scale),
+              Text(
                 '节日',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: Color(0xFF1F2937),
+                  fontSize: context.responsiveFontSize(14),
+                  color: const Color(0xFF1F2937),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: context.responsiveSpacing(12)),
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 8 * scale,
+            runSpacing: 8 * scale,
             children: festivals.map((f) {
               final isBuddhist = f.type == FestivalType.buddhist;
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: EdgeInsets.symmetric(
+                  horizontal: 14 * scale,
+                  vertical: 8 * scale,
+                ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: isBuddhist
                         ? [const Color(0xFFFFB300), const Color(0xFFFF8F00)]
                         : [const Color(0xFFEF5350), const Color(0xFFDC2626)],
                   ),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(14 * scale),
                   boxShadow: [
                     BoxShadow(
-                      color: (isBuddhist 
+                      color: (isBuddhist
                           ? const Color(0xFFFF8F00)
                           : const Color(0xFFEF5350)).withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
+                      blurRadius: 8 * scale,
+                      offset: Offset(0, 3 * scale),
                     ),
                   ],
                 ),
@@ -539,26 +584,20 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
                     if (f.nameTibetan != null) ...[
                       Text(
                         f.nameTibetan!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w500,
-                          fontSize: 11,
+                          fontSize: context.responsiveFontSize(11),
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      Container(
-                        width: 1,
-                        height: 12,
-                        color: Colors.white.withOpacity(0.5),
-                      ),
-                      const SizedBox(width: 6),
+                      SizedBox(width: 6 * scale),
                     ],
                     Text(
                       f.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        fontSize: context.responsiveFontSize(12),
                       ),
                     ),
                   ],
@@ -571,47 +610,53 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildDailyInfoSection(DailyInfo info) {
+  Widget _buildDailyInfoSection(BuildContext context, DailyInfo info) {
+    final scale = context.scale;
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      padding: EdgeInsets.fromLTRB(
+        context.responsiveSpacing(20),
+        0,
+        context.responsiveSpacing(20),
+        context.responsiveSpacing(16),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: EdgeInsets.all(6 * scale),
                 decoration: BoxDecoration(
                   color: const Color(0xFF8B5CF6).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(8 * scale),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.auto_awesome,
-                  size: 16,
-                  color: Color(0xFF8B5CF6),
+                  size: 16 * scale,
+                  color: const Color(0xFF8B5CF6),
                 ),
               ),
-              const SizedBox(width: 10),
-              const Text(
+              SizedBox(width: 10 * scale),
+              Text(
                 '每日宜忌',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: Color(0xFF1F2937),
+                  fontSize: context.responsiveFontSize(14),
+                  color: const Color(0xFF1F2937),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          
+          SizedBox(height: context.responsiveSpacing(12)),
+
           // 宜
           if (info.suitable.isNotEmpty)
             Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(14),
+              margin: EdgeInsets.only(bottom: context.responsiveSpacing(10)),
+              padding: EdgeInsets.all(context.responsiveSpacing(14)),
               decoration: BoxDecoration(
                 color: const Color(0xFF10B981).withOpacity(0.08),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(16 * scale),
                 border: Border.all(
                   color: const Color(0xFF10B981).withOpacity(0.2),
                 ),
@@ -620,27 +665,30 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 10 * scale,
+                      vertical: 4 * scale,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF10B981),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(8 * scale),
                     ),
-                    child: const Text(
+                    child: Text(
                       '宜',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 12,
+                        fontSize: context.responsiveFontSize(12),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12 * scale),
                   Expanded(
                     child: Text(
                       info.suitable.join(' · '),
-                      style: const TextStyle(
-                        color: Color(0xFF059669),
-                        fontSize: 13,
+                      style: TextStyle(
+                        color: const Color(0xFF059669),
+                        fontSize: context.responsiveFontSize(13),
                         height: 1.5,
                       ),
                     ),
@@ -652,10 +700,10 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
           // 忌
           if (info.unsuitable.isNotEmpty)
             Container(
-              padding: const EdgeInsets.all(14),
+              padding: EdgeInsets.all(context.responsiveSpacing(14)),
               decoration: BoxDecoration(
                 color: const Color(0xFFEF5350).withOpacity(0.08),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(16 * scale),
                 border: Border.all(
                   color: const Color(0xFFEF5350).withOpacity(0.2),
                 ),
@@ -664,61 +712,31 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 10 * scale,
+                      vertical: 4 * scale,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFEF5350),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(8 * scale),
                     ),
-                    child: const Text(
+                    child: Text(
                       '忌',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 12,
+                        fontSize: context.responsiveFontSize(12),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12 * scale),
                   Expanded(
                     child: Text(
                       info.unsuitable.join(' · '),
-                      style: const TextStyle(
-                        color: Color(0xFFDC2626),
-                        fontSize: 13,
-                        height: 1.5,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          // 备注
-          if (info.note != null)
-            Container(
-              margin: const EdgeInsets.only(top: 10),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFB300).withOpacity(0.08),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color(0xFFFFB300).withOpacity(0.2),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline_rounded,
-                    size: 16,
-                    color: Colors.orange[700],
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      info.note!,
                       style: TextStyle(
-                        color: Colors.orange[800],
-                        fontSize: 12,
+                        color: const Color(0xFFDC2626),
+                        fontSize: context.responsiveFontSize(13),
+                        height: 1.5,
                       ),
                     ),
                   ),
