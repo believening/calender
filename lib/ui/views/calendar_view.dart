@@ -446,12 +446,7 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
 
         // 详情卡片
         Container(
-          margin: EdgeInsets.fromLTRB(
-            context.responsiveSpacing(16),
-            0,
-            context.responsiveSpacing(16),
-            0,
-          ),
+          margin: EdgeInsets.symmetric(horizontal: context.responsiveSpacing(16)),
           padding: EdgeInsets.all(context.responsiveSpacing(20)),
           decoration: BoxDecoration(
             color: theme.cardColor,
@@ -469,17 +464,19 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
               ),
             ],
           ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildDateHeader(context, selectedDate, settings, theme),
-          SizedBox(height: context.responsiveSpacing(16)),
-          if (settings.showFestivals && selectedDate.festivals.isNotEmpty)
-            _buildFestivalsSection(context, selectedDate.festivals, theme),
-          if (settings.showDailyInfo && selectedDate.dailyInfo != null)
-            _buildDailyInfoSection(context, selectedDate.dailyInfo!, theme),
-        ],
-      ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildDateHeader(context, selectedDate, settings, theme),
+              SizedBox(height: context.responsiveSpacing(16)),
+              if (settings.showFestivals && selectedDate.festivals.isNotEmpty)
+                _buildFestivalsSection(context, selectedDate.festivals, theme),
+              if (settings.showDailyInfo && selectedDate.dailyInfo != null)
+                _buildDailyInfoSection(context, selectedDate.dailyInfo!, theme),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
