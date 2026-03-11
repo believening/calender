@@ -291,6 +291,7 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
     CalendarViewModel vm,
     CalendarDate calendarDate,
     CalendarSettingsProvider settings,
+    CalendarTheme theme,
   ) {
     final scale = context.scale;
     final date = calendarDate.solarDate;
@@ -436,7 +437,7 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
   }
 
   /// 选中日期详情区域 - 扁平化设计（响应式）
-  Widget _buildSelectedDateSection(BuildContext context, CalendarViewModel vm, CalendarSettingsProvider settings) {
+  Widget _buildSelectedDateSection(BuildContext context, CalendarViewModel vm, CalendarSettingsProvider settings, CalendarTheme theme) {
     final selectedDate = vm.selectedCalendarDate;
     if (selectedDate == null) return const SizedBox.shrink();
 
@@ -797,13 +798,16 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
   }
 
   /// 回到今天按钮
-  Widget _buildTodayFab() {
+  Widget _buildTodayFab(CalendarTheme theme) {
     return Consumer<CalendarViewModel>(
       builder: (context, vm, _) => FloatingActionButton.extended(
-        onPressed: vm.goToToday,
-        backgroundColor: const Color(0xFF8B5CF6),
-        elevation: 8,
-        highlightElevation: 12,
+        onPressed: () {
+          HapticFeedback.mediumImpact();
+          vm.goToToday();
+        },
+        backgroundColor: theme.primaryColor,
+        elevation: 6,
+        highlightElevation: 10,
         icon: const Icon(Icons.today_rounded, color: Colors.white),
         label: const Text(
           '今天',
