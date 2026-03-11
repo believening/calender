@@ -7,6 +7,7 @@ import '../../core/providers/calendar_settings_provider.dart';
 import '../../core/providers/locale_provider.dart';
 import '../../core/utils/responsive_helper.dart';
 import '../../core/theme/calendar_theme.dart';
+import '../widgets/traditional_date_card.dart';
 
 /// 日历主视图 - 现代化设计
 /// 
@@ -437,30 +438,37 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
     if (selectedDate == null) return const SizedBox.shrink();
 
     final scale = context.scale;
-    return Container(
-      margin: EdgeInsets.fromLTRB(
-        context.responsiveSpacing(16),
-        context.responsiveSpacing(16),
-        context.responsiveSpacing(16),
-        0,
-      ),
-      padding: EdgeInsets.all(context.responsiveSpacing(20)),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16 * scale),
-        boxShadow: [
-          BoxShadow(
-            color: theme.primaryColor.withOpacity(0.06),
-            blurRadius: 20 * scale,
-            offset: Offset(0, 8 * scale),
+    return Column(
+      children: [
+        // 传统历法信息卡片
+        TraditionalDateCard(date: selectedDate, theme: theme),
+        SizedBox(height: context.responsiveSpacing(16)),
+
+        // 详情卡片
+        Container(
+          margin: EdgeInsets.fromLTRB(
+            context.responsiveSpacing(16),
+            0,
+            context.responsiveSpacing(16),
+            0,
           ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 6 * scale,
-            offset: Offset(0, 2 * scale),
+          padding: EdgeInsets.all(context.responsiveSpacing(20)),
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(16 * scale),
+            boxShadow: [
+              BoxShadow(
+                color: theme.primaryColor.withOpacity(0.06),
+                blurRadius: 20 * scale,
+                offset: Offset(0, 8 * scale),
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 6 * scale,
+                offset: Offset(0, 2 * scale),
+              ),
+            ],
           ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
