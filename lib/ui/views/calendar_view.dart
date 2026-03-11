@@ -313,47 +313,42 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
          tibetanDate.day == 25 || tibetanDate.day == 30);
 
     return GestureDetector(
-      onTap: () => vm.selectDate(date),
+      onTap: () {
+        HapticFeedback.selectionClick();
+        vm.selectDate(date);
+      },
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
+        duration: const Duration(milliseconds: 200),
         curve: Curves.easeOutCubic,
+        transform: Matrix4.identity()..scale(isSelected ? 1.05 : 1.0),
         decoration: BoxDecoration(
           gradient: isSelected
-              ? const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
-                )
+              ? theme.primaryGradient
               : isToday
                   ? LinearGradient(
                       colors: [
-                        const Color(0xFF8B5CF6).withOpacity(0.15),
-                        const Color(0xFFA78BFA).withOpacity(0.1),
+                        theme.primaryColor.withOpacity(0.15),
+                        theme.secondaryColor.withOpacity(0.1),
                       ],
                     )
                   : null,
-          borderRadius: BorderRadius.circular(16 * scale),
+          borderRadius: BorderRadius.circular(14 * scale),
           border: isToday && !isSelected
-              ? Border.all(color: const Color(0xFF8B5CF6), width: 2)
+              ? Border.all(color: theme.primaryColor, width: 2)
               : null,
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: const Color(0xFF8B5CF6).withOpacity(0.5),
-                    blurRadius: 16 * scale,
-                    offset: Offset(0, 6 * scale),
-                  ),
-                  BoxShadow(
-                    color: const Color(0xFF8B5CF6).withOpacity(0.2),
-                    blurRadius: 8 * scale,
-                    offset: Offset(0, 2 * scale),
+                    color: theme.primaryColor.withOpacity(0.4),
+                    blurRadius: 12 * scale,
+                    offset: Offset(0, 4 * scale),
                   ),
                 ]
               : isToday
                   ? [
                       BoxShadow(
-                        color: const Color(0xFF8B5CF6).withOpacity(0.15),
-                        blurRadius: 8 * scale,
+                        color: theme.primaryColor.withOpacity(0.1),
+                        blurRadius: 6 * scale,
                         offset: Offset(0, 2 * scale),
                       ),
                     ]
@@ -377,9 +372,9 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
                           ? Colors.white
                           : isCurrentMonth
                               ? isWeekend
-                                  ? const Color(0xFFEF5350).withOpacity(0.8)
-                                  : const Color(0xFF1F2937)
-                              : const Color(0xFFD1D5DB),
+                                  ? theme.festival.withOpacity(0.8)
+                                  : theme.textPrimary
+                              : theme.textHint,
                     ),
                   ),
                   // 主历法日期
@@ -393,10 +388,10 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
                           color: isSelected
                               ? Colors.white.withOpacity(0.8)
                               : isSpecialDay
-                                  ? const Color(0xFFFF8F00)
+                                  ? theme.specialDay
                                   : hasFestival
-                                      ? const Color(0xFFEF5350)
-                                      : const Color(0xFF9CA3AF),
+                                      ? theme.festival
+                                      : theme.textHint,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -410,21 +405,21 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
                 top: 4 * scale,
                 right: 4 * scale,
                 child: Container(
-                  width: 6 * scale,
-                  height: 6 * scale,
+                  width: 5 * scale,
+                  height: 5 * scale,
                   decoration: BoxDecoration(
                     color: isSelected
                         ? Colors.white
                         : isSpecialDay
-                            ? const Color(0xFFFF8F00)
-                            : const Color(0xFFEF5350),
+                            ? theme.specialDay
+                            : theme.festival,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
                         color: (isSpecialDay
-                            ? const Color(0xFFFF8F00)
-                            : const Color(0xFFEF5350)).withOpacity(0.5),
-                        blurRadius: 4 * scale,
+                            ? theme.specialDay
+                            : theme.festival).withOpacity(0.4),
+                        blurRadius: 3 * scale,
                       ),
                     ],
                   ),
@@ -451,18 +446,18 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
       ),
       padding: EdgeInsets.all(context.responsiveSpacing(20)),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28 * scale),
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16 * scale),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF8B5CF6).withOpacity(0.12),
-            blurRadius: 32 * scale,
-            offset: Offset(0, 12 * scale),
+            color: theme.primaryColor.withOpacity(0.06),
+            blurRadius: 20 * scale,
+            offset: Offset(0, 8 * scale),
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8 * scale,
-            offset: Offset(0, 4 * scale),
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 6 * scale,
+            offset: Offset(0, 2 * scale),
           ),
         ],
       ),
@@ -481,7 +476,7 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
   }
 
   /// 扁平化日期头部 - 紧凑的信息展示（响应式）
-  Widget _buildDateHeader(BuildContext context, CalendarDate date, CalendarSettingsProvider settings) {
+  Widget _buildDateHeader(BuildContext context, CalendarDate date, CalendarSettingsProvider settings, CalendarTheme theme) {
     final scale = context.scale;
     final solarDate = date.solarDate;
     final lunarDate = date.lunarDate;
@@ -496,7 +491,7 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
           style: TextStyle(
             fontSize: context.responsiveFontSize(16),
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF1F2937),
+            color: theme.textPrimary,
           ),
         ),
         SizedBox(height: context.responsiveSpacing(12)),
@@ -511,13 +506,13 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
               _buildCalendarChip(
                 context,
                 '🌸 ${lunarDate.yearName ?? ''} ${lunarDate.monthName}${lunarDate.dayName}',
-                const Color(0xFF10B981),
+                theme.festival,
               ),
             if (settings.primaryCalendar == CalendarType.tibetan && tibetanDate != null && settings.showTibetanCalendar)
               _buildCalendarChip(
                 context,
                 '🏔️ ${tibetanDate.yearElement ?? ''} ${tibetanDate.month}月${tibetanDate.day}日',
-                const Color(0xFFFF8F00),
+                theme.specialDay,
               ),
 
             // 辅助历法（不带年份，简洁显示）
@@ -525,13 +520,13 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
               _buildCalendarChip(
                 context,
                 '🌸 ${lunarDate.monthName}${lunarDate.dayName}',
-                const Color(0xFF10B981),
+                theme.festival,
               ),
             if (settings.primaryCalendar != CalendarType.tibetan && tibetanDate != null && settings.showTibetanCalendar)
               _buildCalendarChip(
                 context,
                 '🏔️ ${tibetanDate.month}月${tibetanDate.day}日',
-                const Color(0xFFFF8F00),
+                theme.specialDay,
               ),
           ],
         ),
