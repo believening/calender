@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/calendar_view_model.dart';
 import '../../models/calendar_models.dart';
 import '../../core/providers/calendar_settings_provider.dart';
 import '../../core/providers/locale_provider.dart';
 import '../../core/utils/responsive_helper.dart';
+import '../../core/theme/calendar_theme.dart';
 
 /// 日历主视图 - 现代化设计
 /// 
@@ -20,15 +22,17 @@ class CalendarView extends StatefulWidget {
   State<CalendarView> createState() => _CalendarViewState();
 }
 
-class _CalendarViewState extends State<CalendarView> with SingleTickerProviderStateMixin {
+class _CalendarViewState extends State<CalendarView> with TickerProviderStateMixin {
   late AnimationController _animationController;
-  
+  double _dragOffset = 0;
+  bool _isDragging = false;
+
   @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 250),
+      duration: const Duration(milliseconds: 300),
     );
     _animationController.forward();
   }
@@ -39,40 +43,81 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
     super.dispose();
   }
 
+  /// 处理水平拖动 - 切换月份
+  void _handleHorizontalDragEnd(double velocity) {
+    const threshold = 100.0;
+
+    if (velocity.abs() > threshold || _dragOffset.abs() > 50) {
+      HapticFeedback.lightImpact();
+      if (_dragOffset > 0) {
+        context.read<CalendarViewModel>().previousMonth();
+      } else {
+        context.read<CalendarViewModel>().nextMonth();
+      }
+    }
+
+    setState(() {
+      _dragOffset = 0;
+      _isDragging = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<CalendarSettingsProvider>(
-      builder: (context, settings, _) => ChangeNotifierProvider(
-        create: (_) => CalendarViewModel(settings: settings)..selectDate(DateTime.now()),
-        child: Scaffold(
-          backgroundColor: const Color(0xFFFAF5FF),
-          body: Consumer<CalendarViewModel>(
-            builder: (context, vm, _) => CustomScrollView(
-              slivers: [
-                _buildAppBar(context, vm),
-                SliverToBoxAdapter(
-                  child: FadeTransition(
-                    opacity: _animationController,
-                    child: Column(
-                      children: [
-                        _buildCalendarSection(context, vm, settings),
-                        _buildSelectedDateSection(context, vm, settings),
-                        const SizedBox(height: 100),
-                      ],
-                    ),
+      builder: (context, settings, _) {
+        final theme = CalendarTheme.fromType(settings.primaryCalendar);
+        return ChangeNotifierProvider(
+          create: (_) => CalendarViewModel(settings: settings)..selectDate(DateTime.now()),
+          child: Scaffold(
+            backgroundColor: theme.backgroundColor,
+            body: Consumer<CalendarViewModel>(
+              builder: (context, vm, _) {
+                return GestureDetector(
+                  onHorizontalDragStart: (_) => setState(() => _isDragging = true),
+                  onHorizontalDragUpdate: (details) {
+                    setState(() => _dragOffset += details.delta.dx);
+                  },
+                  onHorizontalDragEnd: (details) {
+                    _handleHorizontalDragEnd(details.primaryVelocity ?? 0);
+                  },
+                  onDoubleTap: () {
+                    HapticFeedback.mediumImpact();
+                    vm.goToToday();
+                  },
+                  child: CustomScrollView(
+                    slivers: [
+                      _buildAppBar(context, vm, theme),
+                      SliverToBoxAdapter(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          transform: Matrix4.translationValues(_dragOffset * 0.3, 0, 0),
+                          child: FadeTransition(
+                            opacity: _animationController,
+                            child: Column(
+                              children: [
+                                _buildCalendarSection(context, vm, settings, theme),
+                                _buildSelectedDateSection(context, vm, settings, theme),
+                                const SizedBox(height: 100),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                );
+              },
             ),
+            floatingActionButton: _buildTodayFab(theme),
           ),
-          floatingActionButton: _buildTodayFab(),
-        ),
-      ),
+        );
+      },
     );
   }
 
   /// 极简 AppBar - 只保留设置按钮
-  Widget _buildAppBar(BuildContext context, CalendarViewModel vm) {
+  Widget _buildAppBar(BuildContext context, CalendarViewModel vm, CalendarTheme theme) {
     return SliverAppBar(
       floating: true,
       pinned: true,
@@ -84,10 +129,10 @@ class _CalendarViewState extends State<CalendarView> with SingleTickerProviderSt
           icon: Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFFEDE9FE),
+              color: theme.surfaceColor,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.settings_outlined, color: Color(0xFF7C3AED), size: 20),
+            child: Icon(Icons.settings_outlined, color: theme.primaryColor, size: 20),
           ),
           onPressed: () => _showSettingsSheet(context),
         ),
