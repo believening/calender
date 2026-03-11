@@ -8,6 +8,7 @@ import '../../core/providers/locale_provider.dart';
 import '../../core/utils/responsive_helper.dart';
 import '../../core/theme/calendar_theme.dart';
 import '../widgets/traditional_date_card.dart';
+import '../widgets/info_module.dart';
 
 /// 日历主视图 - 现代化设计
 /// 
