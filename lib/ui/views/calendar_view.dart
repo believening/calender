@@ -464,12 +464,12 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildDateHeader(context, selectedDate, settings),
+          _buildDateHeader(context, selectedDate, settings, theme),
           SizedBox(height: context.responsiveSpacing(16)),
           if (settings.showFestivals && selectedDate.festivals.isNotEmpty)
-            _buildFestivalsSection(context, selectedDate.festivals),
+            _buildFestivalsSection(context, selectedDate.festivals, theme),
           if (settings.showDailyInfo && selectedDate.dailyInfo != null)
-            _buildDailyInfoSection(context, selectedDate.dailyInfo!),
+            _buildDailyInfoSection(context, selectedDate.dailyInfo!, theme),
         ],
       ),
     );
@@ -557,7 +557,7 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
     );
   }
 
-  Widget _buildFestivalsSection(BuildContext context, List<Festival> festivals) {
+  Widget _buildFestivalsSection(BuildContext context, List<Festival> festivals, CalendarTheme theme) {
     final scale = context.scale;
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -574,13 +574,13 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
               Container(
                 padding: EdgeInsets.all(6 * scale),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEF5350).withOpacity(0.1),
+                  color: theme.festival.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8 * scale),
                 ),
                 child: Icon(
                   Icons.celebration_rounded,
                   size: 16 * scale,
-                  color: const Color(0xFFEF5350),
+                  color: theme.festival,
                 ),
               ),
               SizedBox(width: 10 * scale),
@@ -589,7 +589,7 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: context.responsiveFontSize(14),
-                  color: const Color(0xFF1F2937),
+                  color: theme.textPrimary,
                 ),
               ),
             ],
@@ -608,17 +608,17 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: isBuddhist
-                        ? [const Color(0xFFFFB300), const Color(0xFFFF8F00)]
-                        : [const Color(0xFFEF5350), const Color(0xFFDC2626)],
+                        ? [const Color(0xFFFFB300), theme.specialDay]
+                        : [theme.festival, const Color(0xFFDC2626)],
                   ),
-                  borderRadius: BorderRadius.circular(14 * scale),
+                  borderRadius: BorderRadius.circular(12 * scale),
                   boxShadow: [
                     BoxShadow(
                       color: (isBuddhist
-                          ? const Color(0xFFFF8F00)
-                          : const Color(0xFFEF5350)).withOpacity(0.3),
-                      blurRadius: 8 * scale,
-                      offset: Offset(0, 3 * scale),
+                          ? theme.specialDay
+                          : theme.festival).withOpacity(0.25),
+                      blurRadius: 6 * scale,
+                      offset: Offset(0, 2 * scale),
                     ),
                   ],
                 ),
@@ -654,7 +654,7 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
     );
   }
 
-  Widget _buildDailyInfoSection(BuildContext context, DailyInfo info) {
+  Widget _buildDailyInfoSection(BuildContext context, DailyInfo info, CalendarTheme theme) {
     final scale = context.scale;
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -671,13 +671,13 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
               Container(
                 padding: EdgeInsets.all(6 * scale),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                  color: theme.primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8 * scale),
                 ),
                 child: Icon(
                   Icons.auto_awesome,
                   size: 16 * scale,
-                  color: const Color(0xFF8B5CF6),
+                  color: theme.primaryColor,
                 ),
               ),
               SizedBox(width: 10 * scale),
@@ -686,7 +686,7 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: context.responsiveFontSize(14),
-                  color: const Color(0xFF1F2937),
+                  color: theme.textPrimary,
                 ),
               ),
             ],
@@ -700,7 +700,7 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
               padding: EdgeInsets.all(context.responsiveSpacing(14)),
               decoration: BoxDecoration(
                 color: const Color(0xFF10B981).withOpacity(0.08),
-                borderRadius: BorderRadius.circular(16 * scale),
+                borderRadius: BorderRadius.circular(14 * scale),
                 border: Border.all(
                   color: const Color(0xFF10B981).withOpacity(0.2),
                 ),
@@ -746,10 +746,10 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
             Container(
               padding: EdgeInsets.all(context.responsiveSpacing(14)),
               decoration: BoxDecoration(
-                color: const Color(0xFFEF5350).withOpacity(0.08),
-                borderRadius: BorderRadius.circular(16 * scale),
+                color: theme.festival.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(14 * scale),
                 border: Border.all(
-                  color: const Color(0xFFEF5350).withOpacity(0.2),
+                  color: theme.festival.withOpacity(0.2),
                 ),
               ),
               child: Row(
@@ -761,7 +761,7 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
                       vertical: 4 * scale,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEF5350),
+                      color: theme.festival,
                       borderRadius: BorderRadius.circular(8 * scale),
                     ),
                     child: Text(
