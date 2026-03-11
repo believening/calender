@@ -142,7 +142,7 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
   }
 
   /// 日历主体区域（响应式）
-  Widget _buildCalendarSection(BuildContext context, CalendarViewModel vm, CalendarSettingsProvider settings) {
+  Widget _buildCalendarSection(BuildContext context, CalendarViewModel vm, CalendarSettingsProvider settings, CalendarTheme theme) {
     final scale = context.scale;
     return Container(
       margin: EdgeInsets.symmetric(
@@ -150,33 +150,33 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
         vertical: context.responsiveSpacing(8),
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28 * scale),
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16 * scale),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF8B5CF6).withOpacity(0.12),
-            blurRadius: 32,
-            offset: const Offset(0, 12),
+            color: theme.primaryColor.withOpacity(0.06),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Column(
         children: [
-          _buildMonthNavigation(context, vm, settings),
-          _buildWeekdayHeader(context),
-          _buildCalendarGrid(context, vm, settings),
+          _buildMonthNavigation(context, vm, settings, theme),
+          _buildWeekdayHeader(context, theme),
+          _buildCalendarGrid(context, vm, settings, theme),
         ],
       ),
     );
   }
 
   /// 月份导航 - 极简设计，只显示月份和导航按钮（响应式）
-  Widget _buildMonthNavigation(BuildContext context, CalendarViewModel vm, CalendarSettingsProvider settings) {
+  Widget _buildMonthNavigation(BuildContext context, CalendarViewModel vm, CalendarSettingsProvider settings, CalendarTheme theme) {
     final scale = context.scale;
     return Padding(
       padding: context.responsivePadding(
@@ -187,36 +187,39 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildNavButton(context, Icons.chevron_left_rounded, vm.previousMonth),
+          _buildNavButton(context, Icons.chevron_left_rounded, vm.previousMonth, theme),
           Text(
             vm.monthTitle,
             style: TextStyle(
               fontSize: context.responsiveFontSize(20),
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF1F2937),
+              color: theme.textPrimary,
             ),
           ),
-          _buildNavButton(context, Icons.chevron_right_rounded, vm.nextMonth),
+          _buildNavButton(context, Icons.chevron_right_rounded, vm.nextMonth, theme),
         ],
       ),
     );
   }
 
-  Widget _buildNavButton(BuildContext context, IconData icon, VoidCallback onPressed) {
+  Widget _buildNavButton(BuildContext context, IconData icon, VoidCallback onPressed, CalendarTheme theme) {
     final scale = context.scale;
     return Material(
-      color: const Color(0xFFEDE9FE),
-      borderRadius: BorderRadius.circular(14 * scale),
+      color: theme.surfaceColor,
+      borderRadius: BorderRadius.circular(12 * scale),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14 * scale),
-        onTap: onPressed,
-        splashColor: const Color(0xFF8B5CF6).withOpacity(0.2),
-        highlightColor: const Color(0xFF8B5CF6).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12 * scale),
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onPressed();
+        },
+        splashColor: theme.primaryColor.withOpacity(0.2),
+        highlightColor: theme.primaryColor.withOpacity(0.1),
         child: Container(
           padding: EdgeInsets.all(10 * scale),
           child: Icon(
             icon,
-            color: const Color(0xFF7C3AED),
+            color: theme.primaryColor,
             size: 24 * scale,
           ),
         ),
@@ -225,7 +228,7 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
   }
 
   /// 星期头部（响应式）
-  Widget _buildWeekdayHeader(BuildContext context) {
+  Widget _buildWeekdayHeader(BuildContext context, CalendarTheme theme) {
     return Container(
       padding: EdgeInsets.symmetric(
         vertical: context.responsiveSpacing(12),
@@ -243,8 +246,8 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   color: isWeekend
-                      ? const Color(0xFFEF5350).withOpacity(0.7)
-                      : const Color(0xFF6B7280),
+                      ? theme.festival.withOpacity(0.7)
+                      : theme.textSecondary,
                   fontSize: context.responsiveFontSize(13),
                 ),
               ),
@@ -256,7 +259,7 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
   }
 
   /// 日历网格（响应式）
-  Widget _buildCalendarGrid(BuildContext context, CalendarViewModel vm, CalendarSettingsProvider settings) {
+  Widget _buildCalendarGrid(BuildContext context, CalendarViewModel vm, CalendarSettingsProvider settings, CalendarTheme theme) {
     final scale = context.scale;
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -276,7 +279,7 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
         ),
         itemCount: vm.monthDates.length,
         itemBuilder: (context, index) {
-          return _buildDateCell(context, vm, vm.monthDates[index], settings);
+          return _buildDateCell(context, vm, vm.monthDates[index], settings, theme);
         },
       ),
     );
