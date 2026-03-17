@@ -49,10 +49,7 @@ class _DateDetailCardState extends State<DateDetailCard> {
   void _updateCalendarTypes() {
     _calendarTypes = [];
     
-    // 公历始终显示
-    _calendarTypes.add(CalendarType.solar);
-    
-    // 根据设置添加其他历法
+    // 根据设置添加历法（不包含公历）
     if (widget.settings.showLunarCalendar) {
       _calendarTypes.add(CalendarType.lunar);
     }
@@ -75,6 +72,11 @@ class _DateDetailCardState extends State<DateDetailCard> {
   @override
   Widget build(BuildContext context) {
     final scale = context.scale;
+
+    // 没有启用的历法：不显示
+    if (_calendarTypes.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     // 单历法：直接显示
     if (_calendarTypes.length == 1) {
@@ -205,37 +207,16 @@ class _DateDetailCardState extends State<DateDetailCard> {
   /// 历法内容
   Widget _buildCalendarContent(BuildContext context, CalendarType type, double scale) {
     switch (type) {
-      case CalendarType.solar:
-        return _buildSolarContent(context, scale);
       case CalendarType.lunar:
         return _buildLunarContent(context, scale);
       case CalendarType.tibetan:
         return _buildTibetanContent(context, scale);
+      case CalendarType.solar:
       case CalendarType.islamic:
       case CalendarType.dai:
       case CalendarType.yi:
         return _buildEmptyState(context, '暂未支持该历法', scale);
     }
-  }
-
-  /// 公历内容
-  Widget _buildSolarContent(BuildContext context, double scale) {
-    final solarDate = widget.date.solarDate;
-    const weekdays = ['一', '二', '三', '四', '五', '六', '日'];
-
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(context.responsiveSpacing(16)),
-      child: Column(
-        children: [
-          // 日期头部
-          _buildDateHeader(context, solarDate, scale, weekdays),
-
-          // 节日（共有）
-          if (widget.settings.showFestivals && widget.date.festivals.isNotEmpty)
-            _buildFestivalsSection(context, scale),
-        ],
-      ),
-    );
   }
 
   /// 农历内容
