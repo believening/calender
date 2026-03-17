@@ -211,6 +211,10 @@ class _DateDetailCardState extends State<DateDetailCard> {
         return _buildLunarContent(context, scale);
       case CalendarType.tibetan:
         return _buildTibetanContent(context, scale);
+      case CalendarType.islamic:
+      case CalendarType.dai:
+      case CalendarType.yi:
+        return _buildEmptyState(context, '暂未支持该历法', scale);
     }
   }
 
