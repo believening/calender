@@ -55,9 +55,9 @@ class DateDetailCard extends StatelessWidget {
           if (lunarDate != null || tibetanDate != null)
             _buildCalendarSection(context, lunarDate, tibetanDate, scale),
 
-          // === 节气（农历独有）===
-          if (settings.showLunarCalendar && lunarDate?.solarTerm != null)
-            _buildSolarTermSection(context, lunarDate!.solarTerm!, scale),
+          // === 节气（农历独有，存储在 DailyInfo.note 中）===
+          if (settings.showLunarCalendar && dailyInfo?.note != null)
+            _buildSolarTermSection(context, dailyInfo!.note!, scale),
 
           // === 节日（共有）===
           if (settings.showFestivals && date.festivals.isNotEmpty)
