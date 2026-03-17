@@ -102,9 +102,8 @@ class _DateDetailCardState extends State<DateDetailCard> {
           // 历法切换指示器
           _buildCalendarTabs(context, scale),
 
-          // 历法详情内容（滑动切换）
-          SizedBox(
-            height: _calculateContentHeight(context, scale),
+          // 历法详情内容（滑动切换）- 使用 Expanded 填充剩余空间
+          Expanded(
             child: PageView.builder(
               controller: _pageController,
               onPageChanged: (index) {
@@ -112,7 +111,9 @@ class _DateDetailCardState extends State<DateDetailCard> {
               },
               itemCount: _calendarTypes.length,
               itemBuilder: (context, index) {
-                return _buildCalendarContent(context, _calendarTypes[index], scale);
+                return SingleChildScrollView(
+                  child: _buildCalendarContent(context, _calendarTypes[index], scale),
+                );
               },
             ),
           ),
@@ -136,7 +137,9 @@ class _DateDetailCardState extends State<DateDetailCard> {
           ),
         ],
       ),
-      child: _buildCalendarContent(context, type, scale),
+      child: SingleChildScrollView(
+        child: _buildCalendarContent(context, type, scale),
+      ),
     );
   }
 

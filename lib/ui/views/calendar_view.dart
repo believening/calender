@@ -124,45 +124,47 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
     final useHorizontalLayout = isLandscape || screenWidth > 600;
 
     if (useHorizontalLayout) {
-      // 横屏/宽屏：左右布局
+      // 横屏/宽屏：左右布局（使用 IntrinsicHeight 确保高度一致）
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: context.responsiveSpacing(16)),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 左侧：日历网格卡片
-            Expanded(
-              flex: 3,
-              child: CalendarGridCard(
-                currentMonth: vm.currentMonth,
-                monthDates: vm.monthDates,
-                selectedDate: vm.selectedDate,
-                settings: settings,
-                theme: theme,
-                onPreviousMonth: vm.previousMonth,
-                onNextMonth: vm.nextMonth,
-                onDateSelected: vm.selectDate,
-                getDateCellText: vm.getDateCellText,
-                isToday: vm.isToday,
-                isSelected: vm.isSelected,
-                isCurrentMonth: vm.isCurrentMonth,
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 左侧：日历网格卡片
+              Expanded(
+                flex: 3,
+                child: CalendarGridCard(
+                  currentMonth: vm.currentMonth,
+                  monthDates: vm.monthDates,
+                  selectedDate: vm.selectedDate,
+                  settings: settings,
+                  theme: theme,
+                  onPreviousMonth: vm.previousMonth,
+                  onNextMonth: vm.nextMonth,
+                  onDateSelected: vm.selectDate,
+                  getDateCellText: vm.getDateCellText,
+                  isToday: vm.isToday,
+                  isSelected: vm.isSelected,
+                  isCurrentMonth: vm.isCurrentMonth,
+                ),
               ),
-            ),
 
-            SizedBox(width: context.responsiveSpacing(16)),
+              SizedBox(width: context.responsiveSpacing(16)),
 
-            // 右侧：选中日期详情卡片
-            Expanded(
-              flex: 2,
-              child: vm.selectedCalendarDate != null
-                  ? DateDetailCard(
-                      date: vm.selectedCalendarDate!,
-                      settings: settings,
-                      theme: theme,
-                    )
-                  : const SizedBox.shrink(),
-            ),
-          ],
+              // 右侧：选中日期详情卡片
+              Expanded(
+                flex: 2,
+                child: vm.selectedCalendarDate != null
+                    ? DateDetailCard(
+                        date: vm.selectedCalendarDate!,
+                        settings: settings,
+                        theme: theme,
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ],
+          ),
         ),
       );
     }
