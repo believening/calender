@@ -623,35 +623,48 @@ class _DateDetailCardState extends State<DateDetailCard> {
         borderRadius: BorderRadius.circular(12 * scale),
         border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.2)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: EdgeInsets.all(8 * scale),
-            decoration: BoxDecoration(
-              color: const Color(0xFF8B5CF6),
-              borderRadius: BorderRadius.circular(8 * scale),
-            ),
-            child: Icon(
-              Icons.auto_awesome,
-              color: Colors.white,
-              size: 18 * scale,
-            ),
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8 * scale),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B5CF6),
+                  borderRadius: BorderRadius.circular(8 * scale),
+                ),
+                child: Icon(
+                  Icons.auto_awesome,
+                  color: Colors.white,
+                  size: 18 * scale,
+                ),
+              ),
+              SizedBox(width: 12 * scale),
+              Text(
+                fiveElements,
+                style: TextStyle(
+                  fontSize: context.responsiveFontSize(15),
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF7C3AED),
+                ),
+              ),
+              SizedBox(width: 8 * scale),
+              Text(
+                '五行',
+                style: TextStyle(
+                  fontSize: context.responsiveFontSize(12),
+                  color: const Color(0xFF8B5CF6),
+                ),
+              ),
+            ],
           ),
-          SizedBox(width: 12 * scale),
+          SizedBox(height: 8 * scale),
           Text(
-            fiveElements,
+            '纳音五行：干支对应的五行属性，用于命理推算',
             style: TextStyle(
-              fontSize: context.responsiveFontSize(15),
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF7C3AED),
-            ),
-          ),
-          SizedBox(width: 8 * scale),
-          Text(
-            '五行',
-            style: TextStyle(
-              fontSize: context.responsiveFontSize(12),
-              color: const Color(0xFF8B5CF6),
+              fontSize: context.responsiveFontSize(11),
+              color: const Color(0xFF7C3AED).withOpacity(0.7),
             ),
           ),
         ],
@@ -674,27 +687,40 @@ class _DateDetailCardState extends State<DateDetailCard> {
         borderRadius: BorderRadius.circular(12 * scale),
         border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.2)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: EdgeInsets.all(8 * scale),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEF4444),
-              borderRadius: BorderRadius.circular(8 * scale),
-            ),
-            child: Icon(
-              Icons.warning_amber_rounded,
-              color: Colors.white,
-              size: 18 * scale,
-            ),
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8 * scale),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF4444),
+                  borderRadius: BorderRadius.circular(8 * scale),
+                ),
+                child: Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.white,
+                  size: 18 * scale,
+                ),
+              ),
+              SizedBox(width: 12 * scale),
+              Text(
+                chongSha,
+                style: TextStyle(
+                  fontSize: context.responsiveFontSize(15),
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFFDC2626),
+                ),
+              ),
+            ],
           ),
-          SizedBox(width: 12 * scale),
+          SizedBox(height: 8 * scale),
           Text(
-            chongSha,
+            '冲：与当日地支相冲的生肖；煞：不宜的方位',
             style: TextStyle(
-              fontSize: context.responsiveFontSize(15),
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFFDC2626),
+              fontSize: context.responsiveFontSize(11),
+              color: const Color(0xFFDC2626).withOpacity(0.7),
             ),
           ),
         ],
@@ -740,6 +766,14 @@ class _DateDetailCardState extends State<DateDetailCard> {
               ),
             ],
           ),
+          SizedBox(height: 8 * scale),
+          Text(
+            '彭祖传说活了八百岁，总结的每日宜忌经验',
+            style: TextStyle(
+              fontSize: context.responsiveFontSize(11),
+              color: const Color(0xFFD97706).withOpacity(0.7),
+            ),
+          ),
           SizedBox(height: 10 * scale),
           Text(
             pengzuTaboo,
@@ -764,37 +798,50 @@ class _DateDetailCardState extends State<DateDetailCard> {
         borderRadius: BorderRadius.circular(12 * scale),
         border: Border.all(color: const Color(0xFFEC4899).withOpacity(0.2)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: EdgeInsets.all(8 * scale),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEC4899),
-              borderRadius: BorderRadius.circular(8 * scale),
-            ),
-            child: Icon(
-              Icons.child_care,
-              color: Colors.white,
-              size: 18 * scale,
-            ),
-          ),
-          SizedBox(width: 12 * scale),
-          Text(
-            '胎神',
-            style: TextStyle(
-              fontSize: context.responsiveFontSize(14),
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFFDB2777),
-            ),
-          ),
-          SizedBox(width: 8 * scale),
-          Expanded(
-            child: Text(
-              fetusGodDirection,
-              style: TextStyle(
-                fontSize: context.responsiveFontSize(13),
-                color: const Color(0xFF9D174D),
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8 * scale),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEC4899),
+                  borderRadius: BorderRadius.circular(8 * scale),
+                ),
+                child: Icon(
+                  Icons.child_care,
+                  color: Colors.white,
+                  size: 18 * scale,
+                ),
               ),
+              SizedBox(width: 12 * scale),
+              Text(
+                '胎神',
+                style: TextStyle(
+                  fontSize: context.responsiveFontSize(14),
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFFDB2777),
+                ),
+              ),
+              SizedBox(width: 8 * scale),
+              Expanded(
+                child: Text(
+                  fetusGodDirection,
+                  style: TextStyle(
+                    fontSize: context.responsiveFontSize(13),
+                    color: const Color(0xFF9D174D),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8 * scale),
+          Text(
+            '胎神所在方位，孕妇应避免在此方位动土或搬动',
+            style: TextStyle(
+              fontSize: context.responsiveFontSize(11),
+              color: const Color(0xFFDB2777).withOpacity(0.7),
             ),
           ),
         ],
