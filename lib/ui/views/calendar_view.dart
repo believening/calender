@@ -7,15 +7,16 @@ import '../../core/providers/calendar_settings_provider.dart';
 import '../../core/providers/locale_provider.dart';
 import '../../core/utils/responsive_helper.dart';
 import '../../core/theme/calendar_theme.dart';
-import '../widgets/compact_date_card.dart';
+import '../widgets/calendar_grid_card.dart';
+import '../widgets/date_detail_card.dart';
 
-/// 日历主视图 - 现代化设计
-/// 
+/// 日历主视图
+///
 /// 设计原则：
-/// - 使用柔和的紫色系配色（避免过于鲜艳）
-/// - 大圆角卡片设计
-/// - 微妙的阴影和动画
-/// - 清晰的信息层次
+/// - 两个主要卡片：日历网格卡片（主）+ 选中日期详情卡片（次）
+/// - 主次分明，信息层级清晰
+/// - 日历网格展示年/月级别信息（纪年、生肖）
+/// - 详情卡片展示日级别信息（节日、节气、宜忌等）
 class CalendarView extends StatefulWidget {
   const CalendarView({super.key});
 
@@ -44,7 +45,6 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
     super.dispose();
   }
 
-  /// 处理水平拖动 - 切换月份
   void _handleHorizontalDragEnd(double velocity) {
     const threshold = 100.0;
 
@@ -88,7 +88,7 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
                   },
                   child: CustomScrollView(
                     slivers: [
-                      _buildAppBar(context, vm, theme),
+                      _buildAppBar(context, theme),
                       SliverToBoxAdapter(
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 300),
@@ -97,8 +97,32 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
                             opacity: _animationController,
                             child: Column(
                               children: [
-                                _buildCalendarSection(context, vm, settings, theme),
-                                _buildSelectedDateSection(context, vm, settings, theme),
+                                // === 主卡片：日历网格 ===
+                                CalendarGridCard(
+                                  currentMonth: vm.currentMonth,
+                                  monthDates: vm.monthDates,
+                                  selectedDate: vm.selectedDate,
+                                  settings: settings,
+                                  theme: theme,
+                                  onPreviousMonth: vm.previousMonth,
+                                  onNextMonth: vm.nextMonth,
+                                  onDateSelected: vm.selectDate,
+                                  getDateCellText: vm.getDateCellText,
+                                  isToday: vm.isToday,
+                                  isSelected: vm.isSelected,
+                                  isCurrentMonth: vm.isCurrentMonth,
+                                ),
+
+                                SizedBox(height: context.responsiveSpacing(16)),
+
+                                // === 次级卡片：选中日期详情 ===
+                                if (vm.selectedCalendarDate != null)
+                                  DateDetailCard(
+                                    date: vm.selectedCalendarDate!,
+                                    settings: settings,
+                                    theme: theme,
+                                  ),
+
                                 const SizedBox(height: 100),
                               ],
                             ),
@@ -117,14 +141,13 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
     );
   }
 
-  /// 极简 AppBar - 只保留设置按钮
-  Widget _buildAppBar(BuildContext context, CalendarViewModel vm, CalendarTheme theme) {
+  Widget _buildAppBar(BuildContext context, CalendarTheme theme) {
     return SliverAppBar(
       floating: true,
       pinned: true,
       elevation: 0,
       backgroundColor: Colors.transparent,
-      leading: const SizedBox.shrink(), // 移除返回按钮
+      leading: const SizedBox.shrink(),
       actions: [
         IconButton(
           icon: Container(
@@ -142,312 +165,6 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
     );
   }
 
-  /// 日历主体区域（响应式）
-  Widget _buildCalendarSection(BuildContext context, CalendarViewModel vm, CalendarSettingsProvider settings, CalendarTheme theme) {
-    final scale = context.scale;
-    return Container(
-      margin: EdgeInsets.symmetric(
-        horizontal: context.responsiveSpacing(16),
-        vertical: context.responsiveSpacing(8),
-      ),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16 * scale),
-        boxShadow: [
-          BoxShadow(
-            color: theme.primaryColor.withOpacity(0.06),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _buildMonthNavigation(context, vm, settings, theme),
-          _buildWeekdayHeader(context, theme),
-          _buildCalendarGrid(context, vm, settings, theme),
-        ],
-      ),
-    );
-  }
-
-  /// 月份导航 - 极简设计，只显示月份和导航按钮（响应式）
-  Widget _buildMonthNavigation(BuildContext context, CalendarViewModel vm, CalendarSettingsProvider settings, CalendarTheme theme) {
-    final scale = context.scale;
-    return Padding(
-      padding: context.responsivePadding(
-        horizontal: 20,
-        top: 20,
-        bottom: 12,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildNavButton(context, Icons.chevron_left_rounded, vm.previousMonth, theme),
-          Text(
-            vm.monthTitle,
-            style: TextStyle(
-              fontSize: context.responsiveFontSize(20),
-              fontWeight: FontWeight.bold,
-              color: theme.textPrimary,
-            ),
-          ),
-          _buildNavButton(context, Icons.chevron_right_rounded, vm.nextMonth, theme),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavButton(BuildContext context, IconData icon, VoidCallback onPressed, CalendarTheme theme) {
-    final scale = context.scale;
-    return Material(
-      color: theme.surfaceColor,
-      borderRadius: BorderRadius.circular(12 * scale),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12 * scale),
-        onTap: () {
-          HapticFeedback.lightImpact();
-          onPressed();
-        },
-        splashColor: theme.primaryColor.withOpacity(0.2),
-        highlightColor: theme.primaryColor.withOpacity(0.1),
-        child: Container(
-          padding: EdgeInsets.all(10 * scale),
-          child: Icon(
-            icon,
-            color: theme.primaryColor,
-            size: 24 * scale,
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 星期头部（响应式）
-  Widget _buildWeekdayHeader(BuildContext context, CalendarTheme theme) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        vertical: context.responsiveSpacing(12),
-        horizontal: context.responsiveSpacing(8),
-      ),
-      child: Row(
-        children: CalendarViewModel.weekdays.asMap().entries.map((entry) {
-          final index = entry.key;
-          final day = entry.value;
-          final isWeekend = index >= 5;
-          return Expanded(
-            child: Center(
-              child: Text(
-                day,
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: isWeekend
-                      ? theme.festival.withOpacity(0.7)
-                      : theme.textSecondary,
-                  fontSize: context.responsiveFontSize(13),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  /// 日历网格（响应式）
-  Widget _buildCalendarGrid(BuildContext context, CalendarViewModel vm, CalendarSettingsProvider settings, CalendarTheme theme) {
-    final scale = context.scale;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        context.responsiveSpacing(12),
-        0,
-        context.responsiveSpacing(12),
-        context.responsiveSpacing(16),
-      ),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 7,
-          childAspectRatio: 1,
-          mainAxisSpacing: 6 * scale,
-          crossAxisSpacing: 6 * scale,
-        ),
-        itemCount: vm.monthDates.length,
-        itemBuilder: (context, index) {
-          return _buildDateCell(context, vm, vm.monthDates[index], settings, theme);
-        },
-      ),
-    );
-  }
-
-  /// 日期单元格（响应式）
-  Widget _buildDateCell(
-    BuildContext context,
-    CalendarViewModel vm,
-    CalendarDate calendarDate,
-    CalendarSettingsProvider settings,
-    CalendarTheme theme,
-  ) {
-    final scale = context.scale;
-    final date = calendarDate.solarDate;
-    final isToday = vm.isToday(date);
-    final isSelected = vm.isSelected(date);
-    final isCurrentMonth = vm.isCurrentMonth(date);
-    final hasFestival = calendarDate.festivals.isNotEmpty && settings.showFestivals;
-    final isWeekend = date.weekday == 6 || date.weekday == 7;
-
-    // 根据主历法获取日期文本
-    final dateText = vm.getDateCellText(calendarDate);
-
-    // 检查殊胜日（仅藏历）
-    final tibetanDate = calendarDate.tibetanDate;
-    final isSpecialDay = settings.primaryCalendar == CalendarType.tibetan &&
-        tibetanDate != null &&
-        (tibetanDate.day == 1 || tibetanDate.day == 8 ||
-         tibetanDate.day == 10 || tibetanDate.day == 15 ||
-         tibetanDate.day == 25 || tibetanDate.day == 30);
-
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        vm.selectDate(date);
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-        transform: Matrix4.identity()..scale(isSelected ? 1.05 : 1.0),
-        decoration: BoxDecoration(
-          gradient: isSelected
-              ? theme.primaryGradient
-              : isToday
-                  ? LinearGradient(
-                      colors: [
-                        theme.primaryColor.withOpacity(0.15),
-                        theme.secondaryColor.withOpacity(0.1),
-                      ],
-                    )
-                  : null,
-          borderRadius: BorderRadius.circular(14 * scale),
-          border: isToday && !isSelected
-              ? Border.all(color: theme.primaryColor, width: 2)
-              : null,
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: theme.primaryColor.withOpacity(0.4),
-                    blurRadius: 12 * scale,
-                    offset: Offset(0, 4 * scale),
-                  ),
-                ]
-              : isToday
-                  ? [
-                      BoxShadow(
-                        color: theme.primaryColor.withOpacity(0.1),
-                        blurRadius: 6 * scale,
-                        offset: Offset(0, 2 * scale),
-                      ),
-                    ]
-                  : null,
-        ),
-        child: Stack(
-          children: [
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // 公历日期
-                  Text(
-                    '${date.day}',
-                    style: TextStyle(
-                      fontSize: context.responsiveFontSize(15),
-                      fontWeight: isToday || isSelected
-                          ? FontWeight.bold
-                          : FontWeight.w500,
-                      color: isSelected
-                          ? Colors.white
-                          : isCurrentMonth
-                              ? isWeekend
-                                  ? theme.festival.withOpacity(0.8)
-                                  : theme.textPrimary
-                              : theme.textHint,
-                    ),
-                  ),
-                  // 主历法日期
-                  if (dateText.isNotEmpty)
-                    Padding(
-                      padding: EdgeInsets.only(top: 2 * scale),
-                      child: Text(
-                        dateText,
-                        style: TextStyle(
-                          fontSize: context.responsiveFontSize(9),
-                          color: isSelected
-                              ? Colors.white.withOpacity(0.8)
-                              : isSpecialDay
-                                  ? theme.specialDay
-                                  : hasFestival
-                                      ? theme.festival
-                                      : theme.textHint,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            // 节日/殊胜日标记
-            if (hasFestival || isSpecialDay)
-              Positioned(
-                top: 4 * scale,
-                right: 4 * scale,
-                child: Container(
-                  width: 5 * scale,
-                  height: 5 * scale,
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? Colors.white
-                        : isSpecialDay
-                            ? theme.specialDay
-                            : theme.festival,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: (isSpecialDay
-                            ? theme.specialDay
-                            : theme.festival).withOpacity(0.4),
-                        blurRadius: 3 * scale,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 选中日期详情区域 - 紧凑卡片设计
-  Widget _buildSelectedDateSection(BuildContext context, CalendarViewModel vm, CalendarSettingsProvider settings, CalendarTheme theme) {
-    final selectedDate = vm.selectedCalendarDate;
-    if (selectedDate == null) return const SizedBox.shrink();
-
-    return CompactDateCard(
-      date: selectedDate,
-      theme: theme,
-      showLunar: settings.showLunarCalendar,
-      showTibetan: settings.showTibetanCalendar,
-      showFestivals: settings.showFestivals,
-      showDailyInfo: settings.showDailyInfo,
-    );
-  }
-
-  /// 回到今天按钮
   Widget _buildTodayFab(CalendarTheme theme) {
     return Consumer<CalendarViewModel>(
       builder: (context, vm, _) => FloatingActionButton.extended(
@@ -467,9 +184,7 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
     );
   }
 
-  /// 显示设置面板
   void _showSettingsSheet(BuildContext context) {
-    // 在打开 BottomSheet 之前获取 Provider 引用
     final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
     final settingsProvider = Provider.of<CalendarSettingsProvider>(context, listen: false);
 
@@ -528,17 +243,17 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
             ),
           ),
           const SizedBox(height: 20),
-          
+
           // 语言设置
           _buildSectionTitle('语言设置'),
           _buildLanguageSection(localeProvider),
           const SizedBox(height: 24),
-          
+
           // 历法设置
           _buildSectionTitle('历法设置'),
           _buildCalendarSettingsSection(settingsProvider),
           const SizedBox(height: 24),
-          
+
           // 插件管理
           _buildSectionTitle('插件管理'),
           _buildPluginsSection(settingsProvider),
@@ -580,13 +295,13 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
           final code = '${locale.languageCode}_${locale.countryCode}';
           final name = LocaleProvider.languageNames[code] ?? '';
           final isSelected = localeProvider.locale == locale;
-          
+
           return ListTile(
             leading: Container(
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: isSelected 
+                color: isSelected
                     ? const Color(0xFFEDE9FE)
                     : const Color(0xFFF3F4F6),
                 borderRadius: BorderRadius.circular(12),
@@ -647,7 +362,6 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
       ),
       child: Column(
         children: [
-          // 主历法选择
           _buildPrimaryCalendarSelector(settings),
           const Divider(height: 1, indent: 68, endIndent: 16),
           _buildSettingTile(
