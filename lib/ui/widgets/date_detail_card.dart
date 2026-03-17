@@ -243,6 +243,14 @@ class _DateDetailCardState extends State<DateDetailCard> {
           // 农历信息
           _buildLunarInfoSection(context, lunarDate, scale),
 
+          // 五行纳音（新增）
+          if (dailyInfo?.fiveElements != null)
+            _buildFiveElementsSection(context, dailyInfo!.fiveElements!, scale),
+
+          // 冲煞（新增）
+          if (dailyInfo?.chongSha != null)
+            _buildChongShaSection(context, dailyInfo!.chongSha!, scale),
+
           // 节气（农历独有）
           if (dailyInfo?.note != null)
             _buildSolarTermSection(context, dailyInfo!.note!, scale),
@@ -254,6 +262,14 @@ class _DateDetailCardState extends State<DateDetailCard> {
           // 宜忌（农历独有）
           if (widget.settings.showDailyInfo && dailyInfo != null)
             _buildDailyInfoSection(context, dailyInfo, scale),
+
+          // 彭祖百忌（新增）
+          if (widget.settings.showDailyInfo && dailyInfo?.pengzuTaboo != null)
+            _buildPengzuSection(context, dailyInfo!.pengzuTaboo!, scale),
+
+          // 胎神方位（新增）
+          if (widget.settings.showDailyInfo && dailyInfo?.fetusGodDirection != null)
+            _buildFetusGodSection(context, dailyInfo!.fetusGodDirection!, scale),
         ],
       ),
     );
@@ -585,6 +601,200 @@ class _DateDetailCardState extends State<DateDetailCard> {
             style: TextStyle(
               fontSize: context.responsiveFontSize(12),
               color: const Color(0xFF10B981),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 五行纳音区域（农历独有）
+  Widget _buildFiveElementsSection(BuildContext context, String fiveElements, double scale) {
+    return Container(
+      margin: EdgeInsets.only(top: context.responsiveSpacing(16)),
+      padding: EdgeInsets.all(context.responsiveSpacing(14)),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF8B5CF6).withOpacity(0.1),
+            const Color(0xFF7C3AED).withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12 * scale),
+        border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(8 * scale),
+            decoration: BoxDecoration(
+              color: const Color(0xFF8B5CF6),
+              borderRadius: BorderRadius.circular(8 * scale),
+            ),
+            child: Icon(
+              Icons.auto_awesome,
+              color: Colors.white,
+              size: 18 * scale,
+            ),
+          ),
+          SizedBox(width: 12 * scale),
+          Text(
+            fiveElements,
+            style: TextStyle(
+              fontSize: context.responsiveFontSize(15),
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF7C3AED),
+            ),
+          ),
+          SizedBox(width: 8 * scale),
+          Text(
+            '五行',
+            style: TextStyle(
+              fontSize: context.responsiveFontSize(12),
+              color: const Color(0xFF8B5CF6),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 冲煞区域（农历独有）
+  Widget _buildChongShaSection(BuildContext context, String chongSha, double scale) {
+    return Container(
+      margin: EdgeInsets.only(top: context.responsiveSpacing(16)),
+      padding: EdgeInsets.all(context.responsiveSpacing(14)),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFFEF4444).withOpacity(0.1),
+            const Color(0xFFDC2626).withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12 * scale),
+        border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(8 * scale),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEF4444),
+              borderRadius: BorderRadius.circular(8 * scale),
+            ),
+            child: Icon(
+              Icons.warning_amber_rounded,
+              color: Colors.white,
+              size: 18 * scale,
+            ),
+          ),
+          SizedBox(width: 12 * scale),
+          Text(
+            chongSha,
+            style: TextStyle(
+              fontSize: context.responsiveFontSize(15),
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFFDC2626),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 彭祖百忌区域（农历独有）
+  Widget _buildPengzuSection(BuildContext context, String pengzuTaboo, double scale) {
+    return Container(
+      margin: EdgeInsets.only(top: context.responsiveSpacing(16)),
+      padding: EdgeInsets.all(context.responsiveSpacing(14)),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF59E0B).withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12 * scale),
+        border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8 * scale),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B),
+                  borderRadius: BorderRadius.circular(8 * scale),
+                ),
+                child: Icon(
+                  Icons.menu_book,
+                  color: Colors.white,
+                  size: 18 * scale,
+                ),
+              ),
+              SizedBox(width: 12 * scale),
+              Text(
+                '彭祖百忌',
+                style: TextStyle(
+                  fontSize: context.responsiveFontSize(14),
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFFD97706),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 10 * scale),
+          Text(
+            pengzuTaboo,
+            style: TextStyle(
+              fontSize: context.responsiveFontSize(13),
+              color: const Color(0xFF92400E),
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 胎神方位区域（农历独有）
+  Widget _buildFetusGodSection(BuildContext context, String fetusGodDirection, double scale) {
+    return Container(
+      margin: EdgeInsets.only(top: context.responsiveSpacing(16)),
+      padding: EdgeInsets.all(context.responsiveSpacing(14)),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEC4899).withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12 * scale),
+        border: Border.all(color: const Color(0xFFEC4899).withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(8 * scale),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEC4899),
+              borderRadius: BorderRadius.circular(8 * scale),
+            ),
+            child: Icon(
+              Icons.child_care,
+              color: Colors.white,
+              size: 18 * scale,
+            ),
+          ),
+          SizedBox(width: 12 * scale),
+          Text(
+            '胎神',
+            style: TextStyle(
+              fontSize: context.responsiveFontSize(14),
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFFDB2777),
+            ),
+          ),
+          SizedBox(width: 8 * scale),
+          Expanded(
+            child: Text(
+              fetusGodDirection,
+              style: TextStyle(
+                fontSize: context.responsiveFontSize(13),
+                color: const Color(0xFF9D174D),
+              ),
             ),
           ),
         ],

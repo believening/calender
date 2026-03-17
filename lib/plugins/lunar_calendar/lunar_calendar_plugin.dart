@@ -223,11 +223,37 @@ class LunarCalendarPlugin extends BaseCalendarPlugin {
       }
     }
 
+    // 获取冲煞
+    final (chong, sha) = LunarAlgorithm.getChongSha(date);
+    String chongSha = '$chong $sha';
+
+    // 获取纳音五行
+    String fiveElements = LunarAlgorithm.getNaYin(date);
+
+    // 获取彭祖百忌
+    final (ganTaboo, zhiTaboo) = LunarAlgorithm.getPengzuTaboo(date);
+    String pengzuTaboo = '$ganTaboo，$zhiTaboo';
+
+    // 获取胎神方位
+    String fetusGodDirection = LunarAlgorithm.getFetusGodDirection(date);
+
+    // 获取吉神方位
+    List<String> luckyDirections = LunarAlgorithm.getLuckyDirections(date);
+
+    // 获取凶神方位
+    List<String> unluckyDirections = LunarAlgorithm.getUnluckyDirections(date);
+
     return DailyInfo(
       date: date,
       suitable: yi,
       unsuitable: ji,
       note: note,
+      chongSha: chongSha,
+      fiveElements: fiveElements,
+      pengzuTaboo: pengzuTaboo,
+      fetusGodDirection: fetusGodDirection,
+      luckyDirections: luckyDirections,
+      unluckyDirections: unluckyDirections,
     );
   }
 

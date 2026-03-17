@@ -3,6 +3,76 @@ import '../../models/calendar_models.dart' show LunarDate;
 
 /// 农历算法引擎
 class LunarAlgorithm {
+  // 五行
+  static const List<String> wuXing = ['金', '木', '水', '火', '土'];
+  
+  // 五行对应天干
+  static const Map<String, String> ganWuXing = {
+    '甲': '木', '乙': '木', '丙': '火', '丁': '火', '戊': '土',
+    '己': '土', '庚': '金', '辛': '金', '壬': '水', '癸': '水'
+  };
+  
+  // 五行对应地支
+  static const Map<String, String> zhiWuXing = {
+    '子': '水', '丑': '土', '寅': '木', '卯': '木', '辰': '土', '巳': '火',
+    '午': '火', '未': '土', '申': '金', '酉': '金', '戌': '土', '亥': '水'
+  };
+  
+  // 地支相冲
+  static const Map<String, String> chongMap = {
+    '子': '午', '丑': '未', '寅': '申', '卯': '酉', '辰': '戌', '巳': '亥',
+    '午': '子', '未': '丑', '申': '寅', '酉': '卯', '戌': '辰', '亥': '巳'
+  };
+  
+  // 地支对应煞方位
+  static const Map<String, String> shaMap = {
+    '子': '南', '丑': '东', '寅': '北', '卯': '西', '辰': '南', '巳': '东',
+    '午': '北', '未': '西', '申': '南', '酉': '东', '戌': '北', '亥': '西'
+  };
+  
+  // 地支对应生肖
+  static const Map<String, String> zhiZodiac = {
+    '子': '鼠', '丑': '牛', '寅': '虎', '卯': '兔', '辰': '龙', '巳': '蛇',
+    '午': '马', '未': '羊', '申': '猴', '酉': '鸡', '戌': '狗', '亥': '猪'
+  };
+  
+  // 彭祖百忌
+  static const Map<String, String> pengzuGan = {
+    '甲': '不开仓财物耗散',
+    '乙': '不栽植千株不长',
+    '丙': '不修灶必见灾殃',
+    '丁': '不剃头头必生疮',
+    '戊': '不受田田主不祥',
+    '己': '不破券二比并亡',
+    '庚': '不经络织机虚张',
+    '辛': '不合酱主人不尝',
+    '壬': '泱水难更堤防',
+    '癸': '不词讼理弱敌强',
+  };
+  
+  static const Map<String, String> pengzuZhi = {
+    '子': '不问卜自惹祸殃',
+    '丑': '不冠带主不还乡',
+    '寅': '不祭祀神鬼不尝',
+    '卯': '不穿井水泉不香',
+    '辰': '不哭泣必主重丧',
+    '巳': '不远行财物伏藏',
+    '午': '不苫盖屋主更张',
+    '未': '不服药毒气入肠',
+    '申': '不安床鬼祟入房',
+    '酉': '不宴客醉坐颠狂',
+    '戌': '不吃犬作怪上床',
+    '亥': '不嫁娶不利新郎',
+  };
+  
+  // 日干支纳音（五行）
+  static const List<String> naYin = [
+    '海中金', '炉中火', '大林木', '路旁土', '剑锋金', '山头火',
+    '涧下水', '城头土', '白蜡金', '杨柳木', '泉中水', '屋上土',
+    '霹雳火', '松柏木', '长流水', '沙中金', '山下火', '平地木',
+    '壁上土', '金箔金', '覆灯火', '天河水', '大驿土', '钗钏金',
+    '桑柘木', '大溪水', '沙中土', '天上火', '石榴木', '大海水'
+  ];
   /// 公历转农历
   static LunarDate? solarToLunar(DateTime date) {
     int year = date.year;
@@ -234,5 +304,105 @@ class LunarAlgorithm {
     }
     
     return result;
+  }
+
+  /// 获取日干支
+  static (String gan, String zhi) getDayGanZhi(DateTime date) {
+    // 以1900年1月1日为基准（甲戌日）
+    DateTime baseDate = DateTime(1900, 1, 1);
+    int offset = date.difference(baseDate).inDays;
+    
+    // 1900年1月1日是甲戌日（天干索引0，地支索引10）
+    int ganIndex = (offset + 0) % 10;
+    int zhiIndex = (offset + 10) % 12;
+    
+    return (LunarData.tianGan[ganIndex], LunarData.diZhi[zhiIndex]);
+  }
+
+  /// 获取冲煞信息
+  /// 返回: (冲生肖, 煞方位)
+  static (String chong, String sha) getChongSha(DateTime date) {
+    final (_, zhi) = getDayGanZhi(date);
+    final chongZhi = chongMap[zhi] ?? '';
+    final chongZodiac = zhiZodiac[chongZhi] ?? '';
+    final sha = shaMap[zhi] ?? '';
+    
+    return ('冲$chongZodiac', '煞$sha');
+  }
+
+  /// 获取日纳音五行
+  static String getNaYin(DateTime date) {
+    final (gan, zhi) = getDayGanZhi(date);
+    int ganIndex = LunarData.tianGan.indexOf(gan);
+    int zhiIndex = LunarData.diZhi.indexOf(zhi);
+    
+    // 纳音索引 = (天干索引 * 2 + 地支索引 / 2) % 30
+    // 简化算法：基于干支组合
+    int offset = (ganIndex % 5) * 2 + (zhiIndex % 6) ~/ 2;
+    offset = offset % 30;
+    
+    return naYin[offset];
+  }
+
+  /// 获取彭祖百忌
+  /// 返回: (天干忌, 地支忌)
+  static (String ganTaboo, String zhiTaboo) getPengzuTaboo(DateTime date) {
+    final (gan, zhi) = getDayGanZhi(date);
+    final ganTaboo = pengzuGan[gan] ?? '';
+    final zhiTaboo = pengzuZhi[zhi] ?? '';
+    
+    return (ganTaboo, zhiTaboo);
+  }
+
+  /// 获取胎神方位
+  static String getFetusGodDirection(DateTime date) {
+    final (gan, zhi) = getDayGanZhi(date);
+    
+    // 天干对应的胎神方位
+    const Map<String, String> ganFetus = {
+      '甲': '门', '乙': '碓', '丙': '灶', '丁': '仓', '戊': '房',
+      '己': '床', '庚': '碓', '辛': '厨', '壬': '仓', '癸': '房'
+    };
+    
+    // 地支对应的胎神方位
+    const Map<String, String> zhiFetus = {
+      '子': '碓', '丑': '厕', '寅': '炉', '卯': '门', '辰': '栖', '巳': '床',
+      '午': '窗', '未': '厕', '申': '碓', '酉': '门', '戌': '栖', '亥': '床'
+    };
+    
+    final ganDir = ganFetus[gan] ?? '';
+    final zhiDir = zhiFetus[zhi] ?? '';
+    
+    return '$ganDir$zhiDir外正${shaMap[zhi] ?? ''}';
+  }
+
+  /// 获取吉神方位
+  static List<String> getLuckyDirections(DateTime date) {
+    final (_, zhi) = getDayGanZhi(date);
+    
+    // 基于地支的吉神方位
+    const Map<String, List<String>> luckyMap = {
+      '子': ['东北', '西南'],
+      '丑': ['东', '西'],
+      '寅': ['北', '南'],
+      '卯': ['西北', '东南'],
+      '辰': ['北', '南'],
+      '巳': ['东', '西'],
+      '午': ['东北', '西南'],
+      '未': ['西北', '东南'],
+      '申': ['北', '南'],
+      '酉': ['东', '西'],
+      '戌': ['东北', '西南'],
+      '亥': ['西北', '东南'],
+    };
+    
+    return luckyMap[zhi] ?? [];
+  }
+
+  /// 获取凶神方位
+  static List<String> getUnluckyDirections(DateTime date) {
+    final (_, zhi) = getDayGanZhi(date);
+    final sha = shaMap[zhi] ?? '';
+    return ['正$sha'];
   }
 }
