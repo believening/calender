@@ -9,6 +9,7 @@ import '../../core/utils/responsive_helper.dart';
 import '../../core/theme/calendar_theme.dart';
 import '../widgets/calendar_grid_card.dart';
 import '../widgets/date_detail_card.dart';
+import '../widgets/date_detail_card.dart';
 
 /// 日历主视图
 ///
@@ -95,37 +96,7 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
                           transform: Matrix4.translationValues(_dragOffset * 0.3, 0, 0),
                           child: FadeTransition(
                             opacity: _animationController,
-                            child: Column(
-                              children: [
-                                // === 主卡片：日历网格 ===
-                                CalendarGridCard(
-                                  currentMonth: vm.currentMonth,
-                                  monthDates: vm.monthDates,
-                                  selectedDate: vm.selectedDate,
-                                  settings: settings,
-                                  theme: theme,
-                                  onPreviousMonth: vm.previousMonth,
-                                  onNextMonth: vm.nextMonth,
-                                  onDateSelected: vm.selectDate,
-                                  getDateCellText: vm.getDateCellText,
-                                  isToday: vm.isToday,
-                                  isSelected: vm.isSelected,
-                                  isCurrentMonth: vm.isCurrentMonth,
-                                ),
-
-                                SizedBox(height: context.responsiveSpacing(16)),
-
-                                // === 次级卡片：选中日期详情 ===
-                                if (vm.selectedCalendarDate != null)
-                                  DateDetailCard(
-                                    date: vm.selectedCalendarDate!,
-                                    settings: settings,
-                                    theme: theme,
-                                  ),
-
-                                const SizedBox(height: 100),
-                              ],
-                            ),
+                            child: _buildResponsiveLayout(context, vm, settings, theme),
                           ),
                         ),
                       ),
@@ -138,6 +109,95 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
           ),
         );
       },
+    );
+  }
+
+  /// 响应式布局：横屏左右，竖屏上下
+  Widget _buildResponsiveLayout(
+    BuildContext context,
+    CalendarViewModel vm,
+    CalendarSettingsProvider settings,
+    CalendarTheme theme,
+  ) {
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final useHorizontalLayout = isLandscape || screenWidth > 600;
+
+    if (useHorizontalLayout) {
+      // 横屏/宽屏：左右布局
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: context.responsiveSpacing(16)),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 左侧：日历网格卡片
+            Expanded(
+              flex: 3,
+              child: CalendarGridCard(
+                currentMonth: vm.currentMonth,
+                monthDates: vm.monthDates,
+                selectedDate: vm.selectedDate,
+                settings: settings,
+                theme: theme,
+                onPreviousMonth: vm.previousMonth,
+                onNextMonth: vm.nextMonth,
+                onDateSelected: vm.selectDate,
+                getDateCellText: vm.getDateCellText,
+                isToday: vm.isToday,
+                isSelected: vm.isSelected,
+                isCurrentMonth: vm.isCurrentMonth,
+              ),
+            ),
+
+            SizedBox(width: context.responsiveSpacing(16)),
+
+            // 右侧：选中日期详情卡片
+            Expanded(
+              flex: 2,
+              child: vm.selectedCalendarDate != null
+                  ? DateDetailCard(
+                      date: vm.selectedCalendarDate!,
+                      settings: settings,
+                      theme: theme,
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 竖屏：上下布局
+    return Column(
+      children: [
+        // === 主卡片：日历网格 ===
+        CalendarGridCard(
+          currentMonth: vm.currentMonth,
+          monthDates: vm.monthDates,
+          selectedDate: vm.selectedDate,
+          settings: settings,
+          theme: theme,
+          onPreviousMonth: vm.previousMonth,
+          onNextMonth: vm.nextMonth,
+          onDateSelected: vm.selectDate,
+          getDateCellText: vm.getDateCellText,
+          isToday: vm.isToday,
+          isSelected: vm.isSelected,
+          isCurrentMonth: vm.isCurrentMonth,
+        ),
+
+        SizedBox(height: context.responsiveSpacing(16)),
+
+        // === 次级卡片：选中日期详情 ===
+        if (vm.selectedCalendarDate != null)
+          DateDetailCard(
+            date: vm.selectedCalendarDate!,
+            settings: settings,
+            theme: theme,
+          ),
+
+        const SizedBox(height: 100),
+      ],
     );
   }
 
