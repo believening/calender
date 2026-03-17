@@ -292,8 +292,12 @@ class _DateDetailCardState extends State<DateDetailCard> {
           // 日期头部
           _buildDateHeader(context, solarDate, scale, weekdays),
 
-          // 藏历信息
+          // 藏历信息（双语文）
           _buildTibetanInfoSection(context, tibetanDate, scale),
+
+          // 缺日/重日标记（藏历独有）
+          if (tibetanDate.isMissingDay || tibetanDate.isDoubleday)
+            _buildSpecialDateMarkSection(context, tibetanDate, scale),
 
           // 殊胜日（藏历独有）
           if (_isSpecialDay(tibetanDate))
@@ -493,7 +497,7 @@ class _DateDetailCardState extends State<DateDetailCard> {
     );
   }
 
-  /// 藏历信息区域
+  /// 藏历信息区域（双语文展示）
   Widget _buildTibetanInfoSection(BuildContext context, TibetanDate tibetanDate, double scale) {
     return Container(
       margin: EdgeInsets.only(top: context.responsiveSpacing(16)),
@@ -529,28 +533,190 @@ class _DateDetailCardState extends State<DateDetailCard> {
               ),
             ),
 
-          // 月日信息
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 12 * scale,
-                  vertical: 6 * scale,
+          // 双语文月日信息
+          Container(
+            padding: EdgeInsets.all(context.responsiveSpacing(12)),
+            decoration: BoxDecoration(
+              color: widget.theme.cardColor,
+              borderRadius: BorderRadius.circular(12 * scale),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 中文月份日期
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10 * scale,
+                        vertical: 4 * scale,
+                      ),
+                      decoration: BoxDecoration(
+                        color: widget.theme.specialDay.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6 * scale),
+                      ),
+                      child: Text(
+                        '中文',
+                        style: TextStyle(
+                          fontSize: context.responsiveFontSize(10),
+                          fontWeight: FontWeight.w600,
+                          color: widget.theme.specialDay,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 10 * scale),
+                    Text(
+                      '${tibetanDate.monthNameChinese ?? '${tibetanDate.month}月'}'
+                      '${tibetanDate.dayNameChinese ?? '${tibetanDate.day}日'}',
+                      style: TextStyle(
+                        fontSize: context.responsiveFontSize(16),
+                        fontWeight: FontWeight.w600,
+                        color: widget.theme.textPrimary,
+                      ),
+                    ),
+                  ],
                 ),
-                decoration: BoxDecoration(
-                  color: widget.theme.cardColor,
-                  borderRadius: BorderRadius.circular(10 * scale),
-                ),
-                child: Text(
-                  '${tibetanDate.month}月${tibetanDate.day}日',
-                  style: TextStyle(
-                    fontSize: context.responsiveFontSize(15),
-                    fontWeight: FontWeight.w500,
-                    color: widget.theme.textPrimary,
+                
+                if (tibetanDate.monthNameTibetan != null || tibetanDate.dayNameTibetan != null) ...[
+                  SizedBox(height: 10 * scale),
+                  Divider(color: widget.theme.textHint.withOpacity(0.2), height: 1),
+                  SizedBox(height: 10 * scale),
+                  
+                  // 藏文月份日期
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10 * scale,
+                          vertical: 4 * scale,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6 * scale),
+                        ),
+                        child: Text(
+                          'བོད་ཡིག',
+                          style: TextStyle(
+                            fontSize: context.responsiveFontSize(10),
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF8B5CF6),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 10 * scale),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (tibetanDate.monthNameTibetan != null)
+                              Text(
+                                tibetanDate.monthNameTibetan!,
+                                style: TextStyle(
+                                  fontSize: context.responsiveFontSize(14),
+                                  color: widget.theme.textPrimary,
+                                ),
+                              ),
+                            if (tibetanDate.dayNameTibetan != null)
+                              Text(
+                                tibetanDate.dayNameTibetan!,
+                                style: TextStyle(
+                                  fontSize: context.responsiveFontSize(14),
+                                  color: widget.theme.textSecondary,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 缺日/重日标记区域（藏历独有）
+  Widget _buildSpecialDateMarkSection(BuildContext context, TibetanDate tibetanDate, double scale) {
+    List<Widget> marks = [];
+
+    if (tibetanDate.isMissingDay) {
+      marks.add(_buildMarkChip(
+        context,
+        '缺日',
+        '藏历中此日不存在，顺延至下一日',
+        const Color(0xFFEF4444),
+        scale,
+      ));
+    }
+
+    if (tibetanDate.isDoubleday) {
+      marks.add(_buildMarkChip(
+        context,
+        '重日',
+        '藏历中此日重复出现两次',
+        const Color(0xFF10B981),
+        scale,
+      ));
+    }
+
+    return Container(
+      margin: EdgeInsets.only(top: context.responsiveSpacing(16)),
+      child: Wrap(
+        spacing: 8 * scale,
+        runSpacing: 8 * scale,
+        children: marks,
+      ),
+    );
+  }
+
+  Widget _buildMarkChip(
+    BuildContext context,
+    String label,
+    String description,
+    Color color,
+    double scale,
+  ) {
+    return Container(
+      padding: EdgeInsets.all(context.responsiveSpacing(12)),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12 * scale),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: 10 * scale,
+              vertical: 4 * scale,
+            ),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(6 * scale),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: context.responsiveFontSize(12),
               ),
-            ],
+            ),
+          ),
+          SizedBox(width: 10 * scale),
+          Flexible(
+            child: Text(
+              description,
+              style: TextStyle(
+                fontSize: context.responsiveFontSize(11),
+                color: color.withOpacity(0.9),
+              ),
+            ),
           ),
         ],
       ),
@@ -912,6 +1078,7 @@ class _DateDetailCardState extends State<DateDetailCard> {
   /// 殊胜日区域（藏历独有）
   Widget _buildSpecialDaySection(BuildContext context, TibetanDate tibetanDate, double scale) {
     final specialDayName = _getSpecialDayName(tibetanDate.day);
+    final specialDayDesc = _getSpecialDayDescription(tibetanDate.day);
     if (specialDayName == null) return const SizedBox.shrink();
 
     return Container(
@@ -927,40 +1094,77 @@ class _DateDetailCardState extends State<DateDetailCard> {
         borderRadius: BorderRadius.circular(12 * scale),
         border: Border.all(color: widget.theme.specialDay.withOpacity(0.25)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: EdgeInsets.all(8 * scale),
-            decoration: BoxDecoration(
-              color: widget.theme.specialDay,
-              borderRadius: BorderRadius.circular(8 * scale),
-            ),
-            child: Icon(
-              Icons.star,
-              color: Colors.white,
-              size: 18 * scale,
-            ),
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8 * scale),
+                decoration: BoxDecoration(
+                  color: widget.theme.specialDay,
+                  borderRadius: BorderRadius.circular(8 * scale),
+                ),
+                child: Icon(
+                  Icons.star,
+                  color: Colors.white,
+                  size: 18 * scale,
+                ),
+              ),
+              SizedBox(width: 12 * scale),
+              Text(
+                specialDayName,
+                style: TextStyle(
+                  fontSize: context.responsiveFontSize(15),
+                  fontWeight: FontWeight.bold,
+                  color: widget.theme.specialDay,
+                ),
+              ),
+              SizedBox(width: 8 * scale),
+              Text(
+                '殊胜日',
+                style: TextStyle(
+                  fontSize: context.responsiveFontSize(12),
+                  color: const Color(0xFFFFB300),
+                ),
+              ),
+            ],
           ),
-          SizedBox(width: 12 * scale),
-          Text(
-            specialDayName,
-            style: TextStyle(
-              fontSize: context.responsiveFontSize(15),
-              fontWeight: FontWeight.bold,
-              color: widget.theme.specialDay,
+          if (specialDayDesc != null) ...[
+            SizedBox(height: 8 * scale),
+            Text(
+              specialDayDesc,
+              style: TextStyle(
+                fontSize: context.responsiveFontSize(11),
+                color: widget.theme.specialDay.withOpacity(0.7),
+              ),
             ),
-          ),
-          SizedBox(width: 8 * scale),
-          Text(
-            '殊胜日',
-            style: TextStyle(
-              fontSize: context.responsiveFontSize(12),
-              color: const Color(0xFFFFB300),
-            ),
-          ),
+          ],
         ],
       ),
     );
+  }
+
+  /// 获取殊胜日说明
+  String? _getSpecialDayDescription(int day) {
+    switch (day) {
+      case 1:
+        return '初一为吉祥日，宜祈福修法';
+      case 8:
+        return '药师佛节日，药师法门修行殊胜日';
+      case 10:
+        return '莲花生大士荟供日，修持莲师法门功德倍增';
+      case 15:
+        return '满月日，佛陀节日，功德增长十万倍';
+      case 18:
+        return '观音菩萨节日，慈悲法门修行殊胜';
+      case 25:
+        return '空行母荟供日，女性本尊修行殊胜';
+      case 30:
+        return '新月日，释迦牟尼佛节日，功德增长百万倍';
+      default:
+        return null;
+    }
   }
 
   /// 宜忌区域（农历独有）
@@ -1086,6 +1290,7 @@ class _DateDetailCardState extends State<DateDetailCard> {
            tibetanDate.day == 8 ||
            tibetanDate.day == 10 ||
            tibetanDate.day == 15 ||
+           tibetanDate.day == 18 ||
            tibetanDate.day == 25 ||
            tibetanDate.day == 30;
   }
