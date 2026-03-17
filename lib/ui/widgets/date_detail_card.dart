@@ -817,7 +817,10 @@ class _DateDetailCardState extends State<DateDetailCard> {
           height += 150 * scale; // 藏历信息 + 殊胜日
           break;
         case CalendarType.solar:
-          height += 60 * scale; // 节日
+        case CalendarType.islamic:
+        case CalendarType.dai:
+        case CalendarType.yi:
+          height += 60 * scale; // 节日等
           break;
       }
     }
@@ -863,6 +866,12 @@ class _DateDetailCardState extends State<DateDetailCard> {
         return '🌸';
       case CalendarType.tibetan:
         return '🏔️';
+      case CalendarType.islamic:
+        return '🌙';
+      case CalendarType.dai:
+        return '🌴';
+      case CalendarType.yi:
+        return '🔥';
     }
   }
 
@@ -874,6 +883,12 @@ class _DateDetailCardState extends State<DateDetailCard> {
         return '农历';
       case CalendarType.tibetan:
         return '藏历';
+      case CalendarType.islamic:
+        return '伊斯兰历';
+      case CalendarType.dai:
+        return '傣历';
+      case CalendarType.yi:
+        return '彝历';
     }
   }
 }
