@@ -9,15 +9,14 @@ import '../../core/utils/responsive_helper.dart';
 import '../../core/theme/calendar_theme.dart';
 import '../widgets/calendar_grid_card.dart';
 import '../widgets/date_detail_card.dart';
-import '../widgets/date_detail_card.dart';
+import '../widgets/tiles/tile_size.dart';
 
-/// 日历主视图
+/// 日历主视图 (Modern UI)
 ///
 /// 设计原则：
 /// - 两个主要卡片：日历网格卡片（主）+ 选中日期详情卡片（次）
-/// - 主次分明，信息层级清晰
-/// - 日历网格展示年/月级别信息（纪年、生肖）
-/// - 详情卡片展示日级别信息（节日、节气、宜忌等）
+/// - 支持磁贴尺寸切换（月/周/日视图）
+/// - 详情卡片使用磁贴布局，支持翻转显示释义
 class CalendarView extends StatefulWidget {
   const CalendarView({super.key});
 
@@ -29,6 +28,14 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
   late AnimationController _animationController;
   double _dragOffset = 0;
   bool _isDragging = false;
+
+  /// 磁贴尺寸
+  TileSize _tileSize = TileSize.large;
+
+  /// 缩放手势状态
+  double _scaleStart = 1.0;
+  double _currentScale = 1.0;
+  TileSize? _pendingTileSize;
 
   @override
   void initState() {
@@ -64,6 +71,48 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
     });
   }
 
+  /// 缩放开始
+  void _handleScaleStart(ScaleStartDetails details) {
+    _scaleStart = _currentScale;
+  }
+
+  /// 缩放更新
+  void _handleScaleUpdate(ScaleUpdateDetails details) {
+    _currentScale = details.scale;
+
+    final scaleDelta = details.scale - _scaleStart;
+
+    // 放大 → 增大磁贴（small → medium → large）
+    if (scaleDelta > 0.3) {
+      final currentIndex = TileSize.values.indexOf(_tileSize);
+      if (currentIndex > 0) {
+        _pendingTileSize = TileSize.values[currentIndex - 1];
+      }
+    }
+    // 缩小 → 减小磁贴（large → medium → small）
+    else if (scaleDelta < -0.3) {
+      final currentIndex = TileSize.values.indexOf(_tileSize);
+      if (currentIndex < TileSize.values.length - 1) {
+        _pendingTileSize = TileSize.values[currentIndex + 1];
+      }
+    } else {
+      _pendingTileSize = null;
+    }
+  }
+
+  /// 缩放结束
+  void _handleScaleEnd(ScaleEndDetails details) {
+    if (_pendingTileSize != null && _pendingTileSize != _tileSize) {
+      setState(() {
+        _tileSize = _pendingTileSize!;
+      });
+      HapticFeedback.mediumImpact();
+    }
+    _pendingTileSize = null;
+    _currentScale = 1.0;
+    _scaleStart = 1.0;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<CalendarSettingsProvider>(
@@ -83,6 +132,9 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
                   onHorizontalDragEnd: (details) {
                     _handleHorizontalDragEnd(details.primaryVelocity ?? 0);
                   },
+                  onScaleStart: _handleScaleStart,
+                  onScaleUpdate: _handleScaleUpdate,
+                  onScaleEnd: _handleScaleEnd,
                   onDoubleTap: () {
                     HapticFeedback.mediumImpact();
                     vm.goToToday();
@@ -147,6 +199,10 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
                   isToday: vm.isToday,
                   isSelected: vm.isSelected,
                   isCurrentMonth: vm.isCurrentMonth,
+                  tileSize: _tileSize,
+                  onTileSizeChanged: (size) {
+                    setState(() => _tileSize = size);
+                  },
                 ),
               ),
 
@@ -186,6 +242,10 @@ class _CalendarViewState extends State<CalendarView> with TickerProviderStateMix
           isToday: vm.isToday,
           isSelected: vm.isSelected,
           isCurrentMonth: vm.isCurrentMonth,
+          tileSize: _tileSize,
+          onTileSizeChanged: (size) {
+            setState(() => _tileSize = size);
+          },
         ),
 
         SizedBox(height: context.responsiveSpacing(16)),

@@ -4,13 +4,14 @@ import '../../core/theme/calendar_theme.dart';
 import '../../core/utils/responsive_helper.dart';
 import '../../core/providers/calendar_settings_provider.dart';
 import '../../models/calendar_models.dart';
+import 'tiles/tile_size.dart';
 
-/// 日历网格卡片 - 主卡片
+/// 日历网格卡片 - 主卡片 (Modern UI)
 ///
 /// 职责：
-/// - 展示传统日历网格（核心功能）
+/// - 展示日历网格（支持月/周/日三种视图）
 /// - 展示年/月级别的历法信息（纪年、生肖）
-/// - 这些信息在日历网格区域直接体现
+/// - 支持磁贴尺寸切换
 class CalendarGridCard extends StatelessWidget {
   final DateTime currentMonth;
   final List<CalendarDate> monthDates;
@@ -24,6 +25,12 @@ class CalendarGridCard extends StatelessWidget {
   final bool Function(DateTime) isToday;
   final bool Function(DateTime) isSelected;
   final bool Function(DateTime) isCurrentMonth;
+  
+  /// 磁贴尺寸
+  final TileSize tileSize;
+  
+  /// 尺寸变化回调
+  final Function(TileSize)? onTileSizeChanged;
 
   const CalendarGridCard({
     super.key,
@@ -39,6 +46,8 @@ class CalendarGridCard extends StatelessWidget {
     required this.isToday,
     required this.isSelected,
     required this.isCurrentMonth,
+    this.tileSize = TileSize.large,
+    this.onTileSizeChanged,
   });
 
   @override
@@ -63,11 +72,11 @@ class CalendarGridCard extends StatelessWidget {
           // === 年份信息栏 ===
           _buildYearInfoBar(context, scale),
 
-          // === 月份导航 ===
+          // === 月份导航 + 尺寸切换 ===
           _buildMonthNavigation(context, scale),
 
-          // === 星期头部 ===
-          _buildWeekdayHeader(context, scale),
+          // === 星期头部（非日视图显示）===
+          if (!tileSize.isDayView) _buildWeekdayHeader(context, scale),
 
           // === 日历网格 ===
           _buildCalendarGrid(context, scale),
@@ -78,11 +87,9 @@ class CalendarGridCard extends StatelessWidget {
 
   /// 年份信息栏 - 展示年级别的历法信息
   Widget _buildYearInfoBar(BuildContext context, double scale) {
-    // 获取当前选中日期或今天的历法信息
     final displayDate = selectedDate ?? DateTime.now();
-
-    // 找到对应的 CalendarDate
     CalendarDate? calendarDate;
+    
     try {
       calendarDate = monthDates.firstWhere(
         (d) => d.solarDate.year == displayDate.year &&
@@ -90,7 +97,6 @@ class CalendarGridCard extends StatelessWidget {
                d.solarDate.day == displayDate.day,
       );
     } catch (_) {
-      // 如果找不到，使用第一个日期的年份信息
       if (monthDates.isNotEmpty) {
         calendarDate = monthDates.first;
       }
@@ -114,7 +120,6 @@ class CalendarGridCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // 生肖图标
           if (lunarDate?.zodiac != null)
             Container(
               width: 44 * scale,
@@ -131,13 +136,10 @@ class CalendarGridCard extends StatelessWidget {
               ),
             ),
           SizedBox(width: 12 * scale),
-
-          // 年份信息
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 公历年份
                 Text(
                   '${currentMonth.year}年',
                   style: TextStyle(
@@ -147,13 +149,10 @@ class CalendarGridCard extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 4 * scale),
-
-                // 历法年份信息
                 Wrap(
                   spacing: 8 * scale,
                   runSpacing: 4 * scale,
                   children: [
-                    // 农历年份（干支 + 生肖）
                     if (settings.showLunarCalendar && lunarDate != null)
                       _buildYearChip(
                         context,
@@ -161,8 +160,6 @@ class CalendarGridCard extends StatelessWidget {
                         theme.festival,
                         scale,
                       ),
-
-                    // 藏历年份
                     if (settings.showTibetanCalendar && tibetanDate != null)
                       _buildYearChip(
                         context,
@@ -182,10 +179,7 @@ class CalendarGridCard extends StatelessWidget {
 
   Widget _buildYearChip(BuildContext context, String text, Color color, double scale) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 10 * scale,
-        vertical: 4 * scale,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 4 * scale),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8 * scale),
@@ -201,7 +195,7 @@ class CalendarGridCard extends StatelessWidget {
     );
   }
 
-  /// 月份导航
+  /// 月份导航 + 尺寸切换控件
   Widget _buildMonthNavigation(BuildContext context, double scale) {
     return Padding(
       padding: EdgeInsets.symmetric(
@@ -209,30 +203,33 @@ class CalendarGridCard extends StatelessWidget {
         vertical: context.responsiveSpacing(12),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildNavButton(
-            context,
-            Icons.chevron_left_rounded,
-            onPreviousMonth,
-            theme,
-            scale,
-          ),
-          Text(
-            '${currentMonth.month}月',
-            style: TextStyle(
-              fontSize: context.responsiveFontSize(20),
-              fontWeight: FontWeight.bold,
-              color: theme.textPrimary,
+          // 左侧：上一月按钮
+          _buildNavButton(context, Icons.chevron_left_rounded, onPreviousMonth, theme, scale),
+          
+          // 中间：月份标题
+          Expanded(
+            child: Center(
+              child: Text(
+                tileSize.isDayView 
+                    ? '${selectedDate?.month ?? currentMonth.month}月'
+                    : '${currentMonth.month}月',
+                style: TextStyle(
+                  fontSize: context.responsiveFontSize(20),
+                  fontWeight: FontWeight.bold,
+                  color: theme.textPrimary,
+                ),
+              ),
             ),
           ),
-          _buildNavButton(
-            context,
-            Icons.chevron_right_rounded,
-            onNextMonth,
-            theme,
-            scale,
-          ),
+          
+          // 右侧：下一月按钮
+          _buildNavButton(context, Icons.chevron_right_rounded, onNextMonth, theme, scale),
+          
+          SizedBox(width: 12 * scale),
+          
+          // 尺寸切换控件
+          _buildTileSizeSwitcher(context, scale),
         ],
       ),
     );
@@ -260,6 +257,42 @@ class CalendarGridCard extends StatelessWidget {
           padding: EdgeInsets.all(10 * scale),
           child: Icon(icon, color: theme.primaryColor, size: 24 * scale),
         ),
+      ),
+    );
+  }
+
+  /// 磁贴尺寸切换器
+  Widget _buildTileSizeSwitcher(BuildContext context, double scale) {
+    return Container(
+      padding: EdgeInsets.all(4 * scale),
+      decoration: BoxDecoration(
+        color: theme.surfaceColor,
+        borderRadius: BorderRadius.circular(10 * scale),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: TileSize.values.map((size) {
+          final isSelected = size == tileSize;
+          return GestureDetector(
+            onTap: () => onTileSizeChanged?.call(size),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: EdgeInsets.symmetric(horizontal: 10 * scale, vertical: 6 * scale),
+              decoration: BoxDecoration(
+                color: isSelected ? theme.primaryColor : Colors.transparent,
+                borderRadius: BorderRadius.circular(8 * scale),
+              ),
+              child: Text(
+                size.displayName,
+                style: TextStyle(
+                  fontSize: context.responsiveFontSize(12),
+                  fontWeight: FontWeight.w600,
+                  color: isSelected ? Colors.white : theme.textSecondary,
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -298,8 +331,36 @@ class CalendarGridCard extends StatelessWidget {
     );
   }
 
-  /// 日历网格
+  /// 日历网格 - 根据尺寸显示不同视图
   Widget _buildCalendarGrid(BuildContext context, double scale) {
+    final displayDates = _getFilteredDates();
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      transitionBuilder: (child, animation) {
+        return FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.95, end: 1.0).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+            ),
+            child: child,
+          ),
+        );
+      },
+      child: Container(
+        key: ValueKey('grid_${tileSize.name}'),
+        child: tileSize.isDayView
+            ? _buildDayView(context, scale)
+            : _buildMonthOrWeekGrid(context, displayDates, scale),
+      ),
+    );
+  }
+
+  /// 月/周视图网格
+  Widget _buildMonthOrWeekGrid(BuildContext context, List<CalendarDate> displayDates, double scale) {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         context.responsiveSpacing(12),
@@ -316,12 +377,150 @@ class CalendarGridCard extends StatelessWidget {
           mainAxisSpacing: 6 * scale,
           crossAxisSpacing: 6 * scale,
         ),
-        itemCount: monthDates.length,
+        itemCount: displayDates.length,
         itemBuilder: (context, index) {
-          return _buildDateCell(context, monthDates[index], scale);
+          return _buildDateCell(context, displayDates[index], scale);
         },
       ),
     );
+  }
+  
+  /// 获取过滤后的日期列表
+  List<CalendarDate> _getFilteredDates() {
+    if (tileSize.isMonthView) {
+      return monthDates;
+    }
+    
+    if (tileSize.isWeekView && selectedDate != null) {
+      // 获取选中日期所在周的所有日期
+      final selected = selectedDate!;
+      final weekday = selected.weekday % 7; // 转换为周日=0
+      final startOfWeek = selected.subtract(Duration(days: weekday));
+      
+      return monthDates.where((date) {
+        final d = date.solarDate;
+        for (var i = 0; i < 7; i++) {
+          final weekDay = startOfWeek.add(Duration(days: i));
+          if (d.year == weekDay.year && d.month == weekDay.month && d.day == weekDay.day) {
+            return true;
+          }
+        }
+        return false;
+      }).toList();
+    }
+    
+    if (tileSize.isDayView && selectedDate != null) {
+      return monthDates.where((date) {
+        final d = date.solarDate;
+        final s = selectedDate!;
+        return d.year == s.year && d.month == s.month && d.day == s.day;
+      }).toList();
+    }
+    
+    return monthDates;
+  }
+  
+  /// 日视图 - 单独渲染选中日期
+  Widget _buildDayView(BuildContext context, double scale) {
+    final selected = selectedDate ?? DateTime.now();
+    CalendarDate? selectedCalendarDate;
+    
+    try {
+      selectedCalendarDate = monthDates.firstWhere(
+        (d) => d.solarDate.year == selected.year &&
+               d.solarDate.month == selected.month &&
+               d.solarDate.day == selected.day,
+      );
+    } catch (_) {}
+    
+    final lunarDate = selectedCalendarDate?.lunarDate;
+    final tibetanDate = selectedCalendarDate?.tibetanDate;
+    
+    return Padding(
+      padding: EdgeInsets.all(context.responsiveSpacing(16)),
+      child: Container(
+        padding: EdgeInsets.all(context.responsiveSpacing(20)),
+        decoration: BoxDecoration(
+          gradient: theme.primaryGradient,
+          borderRadius: BorderRadius.circular(20 * scale),
+          boxShadow: [
+            BoxShadow(
+              color: theme.primaryColor.withOpacity(0.3),
+              blurRadius: 20 * scale,
+              offset: Offset(0, 8 * scale),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // 大日期数字
+            Text(
+              '${selected.day}',
+              style: TextStyle(
+                fontSize: 64 * scale,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                height: 1,
+              ),
+            ),
+            SizedBox(height: 8 * scale),
+            
+            // 星期
+            Text(
+              '星期${_getWeekdayName(selected.weekday)}',
+              style: TextStyle(
+                fontSize: context.responsiveFontSize(18),
+                color: Colors.white.withOpacity(0.9),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            SizedBox(height: 12 * scale),
+            
+            // 历法信息
+            Wrap(
+              spacing: 12 * scale,
+              runSpacing: 8 * scale,
+              alignment: WrapAlignment.center,
+              children: [
+                if (lunarDate != null)
+                  _buildDayViewChip(
+                    '🌸 ${lunarDate.monthName ?? ''}${lunarDate.dayName ?? ''}',
+                    scale,
+                  ),
+                if (tibetanDate != null)
+                  _buildDayViewChip(
+                    '🏔️ ${tibetanDate.monthNameChinese ?? ''}${tibetanDate.dayNameChinese ?? ''}',
+                    scale,
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildDayViewChip(String text, double scale) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12 * scale, vertical: 6 * scale),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(8 * scale),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 14 * scale,
+          color: Colors.white,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+  
+  String _getWeekdayName(int weekday) {
+    const names = ['一', '二', '三', '四', '五', '六', '日'];
+    return names[weekday - 1];
   }
 
   /// 日期单元格
@@ -391,7 +590,6 @@ class CalendarGridCard extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // 公历日期
                   Text(
                     '${date.day}',
                     style: TextStyle(
@@ -408,7 +606,6 @@ class CalendarGridCard extends StatelessWidget {
                               : theme.textHint,
                     ),
                   ),
-                  // 历法日期
                   if (dateText.isNotEmpty)
                     Padding(
                       padding: EdgeInsets.only(top: 2 * scale),
@@ -430,7 +627,6 @@ class CalendarGridCard extends StatelessWidget {
                 ],
               ),
             ),
-            // 节日/殊胜日标记
             if (hasFestival || isSpecialDay)
               Positioned(
                 top: 4 * scale,

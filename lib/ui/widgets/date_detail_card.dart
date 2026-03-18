@@ -3,13 +3,15 @@ import '../../core/theme/calendar_theme.dart';
 import '../../core/utils/responsive_helper.dart';
 import '../../core/providers/calendar_settings_provider.dart';
 import '../../models/calendar_models.dart';
+import 'tiles/info_tile.dart';
 
-/// 选中日期详情卡片 - 支持多历法滑动切换
+/// 日期详情卡片 - Modern UI 磁贴风格
 ///
 /// 设计原则：
-/// - 每种历法独立渲染自己的详情卡片
-/// - 多历法时，滑动切换查看不同历法信息
-/// - 单历法时，直接显示
+/// - 每种历法的每种详情类型 = 一个磁贴
+/// - 所有磁贴平铺展示，不需要 tab
+/// - 支持左右滑动切换历法（整组磁贴切换）
+/// - 每个磁贴可翻转显示释义
 class DateDetailCard extends StatefulWidget {
   final CalendarDate date;
   final CalendarSettingsProvider settings;
@@ -29,8 +31,6 @@ class DateDetailCard extends StatefulWidget {
 class _DateDetailCardState extends State<DateDetailCard> {
   late PageController _pageController;
   int _currentPage = 0;
-
-  // 历法类型列表
   late List<CalendarType> _calendarTypes;
 
   @override
@@ -49,7 +49,6 @@ class _DateDetailCardState extends State<DateDetailCard> {
   void _updateCalendarTypes() {
     _calendarTypes = [];
     
-    // 根据设置添加历法（不包含公历）
     if (widget.settings.showLunarCalendar) {
       _calendarTypes.add(CalendarType.lunar);
     }
@@ -57,7 +56,6 @@ class _DateDetailCardState extends State<DateDetailCard> {
       _calendarTypes.add(CalendarType.tibetan);
     }
 
-    // 确保当前页在范围内
     if (_currentPage >= _calendarTypes.length) {
       _currentPage = 0;
     }
@@ -73,17 +71,10 @@ class _DateDetailCardState extends State<DateDetailCard> {
   Widget build(BuildContext context) {
     final scale = context.scale;
 
-    // 没有启用的历法：不显示
     if (_calendarTypes.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    // 单历法：直接显示
-    if (_calendarTypes.length == 1) {
-      return _buildSingleCalendarView(context, _calendarTypes.first, scale);
-    }
-
-    // 多历法：滑动切换
     return Container(
       margin: EdgeInsets.symmetric(horizontal: context.responsiveSpacing(16)),
       decoration: BoxDecoration(
@@ -99,11 +90,13 @@ class _DateDetailCardState extends State<DateDetailCard> {
       ),
       child: Column(
         children: [
-          // 历法切换指示器
-          _buildCalendarTabs(context, scale),
-
-          // 历法详情内容（滑动切换）- 使用 Expanded 填充剩余空间
-          Expanded(
+          // 历法指示器
+          if (_calendarTypes.length > 1)
+            _buildCalendarIndicator(context, scale),
+          
+          // 磁贴内容（PageView 整体切换）
+          SizedBox(
+            height: _calculateContentHeight(context, scale),
             child: PageView.builder(
               controller: _pageController,
               onPageChanged: (index) {
@@ -112,7 +105,8 @@ class _DateDetailCardState extends State<DateDetailCard> {
               itemCount: _calendarTypes.length,
               itemBuilder: (context, index) {
                 return SingleChildScrollView(
-                  child: _buildCalendarContent(context, _calendarTypes[index], scale),
+                  padding: EdgeInsets.all(context.responsiveSpacing(16)),
+                  child: _buildTileGrid(context, _calendarTypes[index], scale),
                 );
               },
             ),
@@ -122,83 +116,32 @@ class _DateDetailCardState extends State<DateDetailCard> {
     );
   }
 
-  /// 单历法视图
-  Widget _buildSingleCalendarView(BuildContext context, CalendarType type, double scale) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: context.responsiveSpacing(16)),
-      decoration: BoxDecoration(
-        color: widget.theme.cardColor,
-        borderRadius: BorderRadius.circular(20 * scale),
-        boxShadow: [
-          BoxShadow(
-            color: widget.theme.primaryColor.withOpacity(0.08),
-            blurRadius: 24 * scale,
-            offset: Offset(0, 8 * scale),
-          ),
-        ],
-      ),
-      child: SingleChildScrollView(
-        child: _buildCalendarContent(context, type, scale),
-      ),
-    );
-  }
-
-  /// 历法切换标签
-  Widget _buildCalendarTabs(BuildContext context, double scale) {
-    return Container(
-      padding: EdgeInsets.all(context.responsiveSpacing(12)),
+  /// 历法指示器（小圆点）
+  Widget _buildCalendarIndicator(BuildContext context, double scale) {
+    return Padding(
+      padding: EdgeInsets.only(top: 12 * scale),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: _calendarTypes.asMap().entries.map((entry) {
-          final index = entry.key;
-          final type = entry.value;
-          final isSelected = index == _currentPage;
-
+          final isSelected = entry.key == _currentPage;
           return GestureDetector(
             onTap: () {
               _pageController.animateToPage(
-                index,
+                entry.key,
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
               );
             },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              margin: EdgeInsets.symmetric(horizontal: 6 * scale),
-              padding: EdgeInsets.symmetric(
-                horizontal: 16 * scale,
-                vertical: 8 * scale,
-              ),
+              margin: EdgeInsets.symmetric(horizontal: 4 * scale),
+              width: isSelected ? 24 * scale : 8 * scale,
+              height: 8 * scale,
               decoration: BoxDecoration(
                 color: isSelected
                     ? widget.theme.primaryColor
-                    : widget.theme.surfaceColor,
-                borderRadius: BorderRadius.circular(12 * scale),
-                border: Border.all(
-                  color: isSelected
-                      ? widget.theme.primaryColor
-                      : widget.theme.textHint.withOpacity(0.2),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _getCalendarIcon(type),
-                    style: TextStyle(fontSize: 14 * scale),
-                  ),
-                  SizedBox(width: 6 * scale),
-                  Text(
-                    _getCalendarName(type),
-                    style: TextStyle(
-                      fontSize: context.responsiveFontSize(13),
-                      fontWeight: FontWeight.w600,
-                      color: isSelected
-                          ? Colors.white
-                          : widget.theme.textPrimary,
-                    ),
-                  ),
-                ],
+                    : widget.theme.textHint.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(4 * scale),
               ),
             ),
           );
@@ -207,112 +150,244 @@ class _DateDetailCardState extends State<DateDetailCard> {
     );
   }
 
-  /// 历法内容
-  Widget _buildCalendarContent(BuildContext context, CalendarType type, double scale) {
+  /// 磁贴网格布局
+  Widget _buildTileGrid(BuildContext context, CalendarType type, double scale) {
+    final tiles = _buildTilesForCalendar(type, scale);
+    
+    if (tiles.isEmpty) {
+      return _buildEmptyState(context, type, scale);
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 历法标题
+        Padding(
+          padding: EdgeInsets.only(bottom: 12 * scale),
+          child: Row(
+            children: [
+              Text(
+                _getCalendarIcon(type),
+                style: TextStyle(fontSize: 18 * scale),
+              ),
+              SizedBox(width: 8 * scale),
+              Text(
+                _getCalendarName(type),
+                style: TextStyle(
+                  fontSize: context.responsiveFontSize(16),
+                  fontWeight: FontWeight.bold,
+                  color: widget.theme.textPrimary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        // 磁贴网格
+        InfoTileGrid(
+          tiles: tiles,
+          crossAxisCountMobile: 1,
+          crossAxisCountTablet: 2,
+          spacing: 12,
+        ),
+      ],
+    );
+  }
+
+  /// 根据历法类型构建磁贴列表
+  List<Widget> _buildTilesForCalendar(CalendarType type, double scale) {
     switch (type) {
       case CalendarType.lunar:
-        return _buildLunarContent(context, scale);
+        return _buildLunarTiles(context, scale);
       case CalendarType.tibetan:
-        return _buildTibetanContent(context, scale);
-      case CalendarType.solar:
-      case CalendarType.islamic:
-      case CalendarType.dai:
-      case CalendarType.yi:
-        return _buildEmptyState(context, '暂未支持该历法', scale);
+        return _buildTibetanTiles(context, scale);
+      default:
+        return [];
     }
   }
 
-  /// 农历内容
-  Widget _buildLunarContent(BuildContext context, double scale) {
-    final solarDate = widget.date.solarDate;
+  /// 农历磁贴
+  List<Widget> _buildLunarTiles(BuildContext context, double scale) {
+    final tiles = <Widget>[];
     final lunarDate = widget.date.lunarDate;
     final dailyInfo = widget.date.dailyInfo;
-    const weekdays = ['一', '二', '三', '四', '五', '六', '日'];
 
-    if (lunarDate == null) {
-      return _buildEmptyState(context, '暂无农历数据', scale);
+    if (lunarDate == null) return tiles;
+
+    // 农历月日信息
+    tiles.add(InfoTile(
+      type: InfoTileType.lunarInfo,
+      content: '${lunarDate.monthName ?? ''}${lunarDate.dayName ?? ''}',
+      explanation: '农历是中国传统历法，结合月相变化与太阳年长度。${lunarDate.ganZhi ?? ''}年，生肖${lunarDate.zodiac ?? ''}。',
+      theme: widget.theme,
+      compact: true,
+    ));
+
+    // 节气
+    if (widget.settings.showDailyInfo && dailyInfo?.note != null) {
+      tiles.add(InfoTile(
+        type: InfoTileType.solarTerm,
+        content: dailyInfo!.note!,
+        explanation: '节气是根据太阳在黄道上的位置划分的24个时间点，每个节气约15天，用于指导农事和日常生活。',
+        theme: widget.theme,
+      ));
     }
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(context.responsiveSpacing(16)),
-      child: Column(
-        children: [
-          // 日期头部
-          _buildDateHeader(context, solarDate, scale, weekdays),
+    // 五行纳音
+    if (widget.settings.showDailyInfo && dailyInfo?.fiveElements != null) {
+      tiles.add(InfoTile(
+        type: InfoTileType.fiveElements,
+        content: dailyInfo!.fiveElements!,
+        explanation: '纳音五行是干支对应的五行属性。今日干支五行属${_extractFiveElement(dailyInfo!.fiveElements!)}，可用于命理推算和择日参考。',
+        theme: widget.theme,
+      ));
+    }
 
-          // 农历信息
-          _buildLunarInfoSection(context, lunarDate, scale),
+    // 冲煞
+    if (widget.settings.showDailyInfo && dailyInfo?.chongSha != null) {
+      tiles.add(InfoTile(
+        type: InfoTileType.chongSha,
+        content: dailyInfo!.chongSha!,
+        explanation: _getChongShaExplanation(dailyInfo!.chongSha!),
+        theme: widget.theme,
+      ));
+    }
 
-          // 五行纳音（新增）
-          if (dailyInfo?.fiveElements != null)
-            _buildFiveElementsSection(context, dailyInfo!.fiveElements!, scale),
+    // 宜忌
+    if (widget.settings.showDailyInfo && dailyInfo != null) {
+      final yiText = dailyInfo.suitable.isNotEmpty
+          ? '宜：${dailyInfo.suitable.take(5).join('、')}'
+          : '';
+      final jiText = dailyInfo.unsuitable.isNotEmpty
+          ? '忌：${dailyInfo.unsuitable.take(5).join('、')}'
+          : '';
+      
+      if (yiText.isNotEmpty || jiText.isNotEmpty) {
+        tiles.add(InfoTile(
+          type: InfoTileType.yiJi,
+          content: [yiText, jiText].where((s) => s.isNotEmpty).join('\n'),
+          explanation: '宜忌是根据当日干支五行推算的行事参考。「宜」表示适合进行的事项，「忌」表示应避免的事项，源自传统黄历智慧。',
+          theme: widget.theme,
+        ));
+      }
+    }
 
-          // 冲煞（新增）
-          if (dailyInfo?.chongSha != null)
-            _buildChongShaSection(context, dailyInfo!.chongSha!, scale),
+    // 彭祖百忌
+    if (widget.settings.showDailyInfo && dailyInfo?.pengzuTaboo != null) {
+      tiles.add(InfoTile(
+        type: InfoTileType.pengzu,
+        content: dailyInfo!.pengzuTaboo!,
+        explanation: '彭祖百忌是传说中的长寿仙人彭祖总结的每日禁忌经验。此口诀提示今日应避免的具体行为，以趋吉避凶。',
+        theme: widget.theme,
+      ));
+    }
 
-          // 节气（农历独有）
-          if (dailyInfo?.note != null)
-            _buildSolarTermSection(context, dailyInfo!.note!, scale),
+    // 胎神方位
+    if (widget.settings.showDailyInfo && dailyInfo?.fetusGodDirection != null) {
+      tiles.add(InfoTile(
+        type: InfoTileType.fetusGod,
+        content: dailyInfo!.fetusGodDirection!,
+        explanation: '胎神是守护胎儿的神灵，每日所在方位不同。孕妇及家人应避免在胎神方位动土、搬动物品或进行装修，以免惊扰胎神。',
+        theme: widget.theme,
+      ));
+    }
 
-          // 节日
-          if (widget.settings.showFestivals && widget.date.festivals.isNotEmpty)
-            _buildFestivalsSection(context, scale),
+    // 节日
+    if (widget.settings.showFestivals && widget.date.festivals.isNotEmpty) {
+      final festivalNames = widget.date.festivals
+          .where((f) => f.type != FestivalType.buddhist)
+          .map((f) => f.name)
+          .toList();
+      
+      if (festivalNames.isNotEmpty) {
+        tiles.add(InfoTile(
+          type: InfoTileType.festival,
+          content: festivalNames.first,
+          additionalContent: festivalNames.length > 1 ? festivalNames.skip(1).toList() : null,
+          explanation: '${festivalNames.first}是中华民族传统节日，承载着丰富的历史文化内涵和民俗传统。',
+          theme: widget.theme,
+        ));
+      }
+    }
 
-          // 宜忌（农历独有）
-          if (widget.settings.showDailyInfo && dailyInfo != null)
-            _buildDailyInfoSection(context, dailyInfo, scale),
-
-          // 彭祖百忌（新增）
-          if (widget.settings.showDailyInfo && dailyInfo?.pengzuTaboo != null)
-            _buildPengzuSection(context, dailyInfo!.pengzuTaboo!, scale),
-
-          // 胎神方位（新增）
-          if (widget.settings.showDailyInfo && dailyInfo?.fetusGodDirection != null)
-            _buildFetusGodSection(context, dailyInfo!.fetusGodDirection!, scale),
-        ],
-      ),
-    );
+    return tiles;
   }
 
-  /// 藏历内容
-  Widget _buildTibetanContent(BuildContext context, double scale) {
-    final solarDate = widget.date.solarDate;
+  /// 藏历磁贴
+  List<Widget> _buildTibetanTiles(BuildContext context, double scale) {
+    final tiles = <Widget>[];
     final tibetanDate = widget.date.tibetanDate;
-    const weekdays = ['一', '二', '三', '四', '五', '六', '日'];
 
-    if (tibetanDate == null) {
-      return _buildEmptyState(context, '暂无藏历数据', scale);
+    if (tibetanDate == null) return tiles;
+
+    // 藏历月日信息（双语文）
+    final tibetanInfo = tibetanDate.monthNameTibetan != null || tibetanDate.dayNameTibetan != null
+        ? '${tibetanDate.monthNameTibetan ?? ''}${tibetanDate.dayNameTibetan ?? ''}'
+        : '';
+    
+    tiles.add(InfoTile(
+      type: InfoTileType.tibetanInfo,
+      content: '${tibetanDate.monthNameChinese ?? ''}${tibetanDate.dayNameChinese ?? ''}',
+      explanation: tibetanInfo.isNotEmpty
+          ? '藏文：$tibetanInfo\n藏历是藏族传统历法，融合了印度时轮历和汉历元素。${tibetanDate.yearElement ?? ''}。'
+          : '藏历是藏族传统历法，融合了印度时轮历和汉历元素。${tibetanDate.yearElement ?? ''}',
+      theme: widget.theme,
+      compact: true,
+    ));
+
+    // 缺日/重日标记
+    if (tibetanDate.isMissingDay || tibetanDate.isDoubleday) {
+      final marks = <String>[];
+      if (tibetanDate.isMissingDay) marks.add('缺日');
+      if (tibetanDate.isDoubleday) marks.add('重日');
+      
+      tiles.add(InfoTile(
+        type: InfoTileType.dateMark,
+        content: marks.join(' · '),
+        explanation: '藏历特有的日期调整机制。「缺日」表示此日被跳过、不在日历中显示；「重日」表示此日出现两次。这是藏历为保持与月相一致而采用的调整方式。',
+        theme: widget.theme,
+      ));
     }
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(context.responsiveSpacing(16)),
-      child: Column(
-        children: [
-          // 日期头部
-          _buildDateHeader(context, solarDate, scale, weekdays),
+    // 殊胜日
+    if (_isSpecialDay(tibetanDate)) {
+      final specialDayName = _getSpecialDayName(tibetanDate.day);
+      final specialDayDesc = _getSpecialDayDescription(tibetanDate.day);
+      
+      if (specialDayName != null) {
+        tiles.add(InfoTile(
+          type: InfoTileType.specialDay,
+          content: specialDayName,
+          explanation: specialDayDesc ?? '藏传佛教殊胜日，修法功德倍增。',
+          theme: widget.theme,
+        ));
+      }
+    }
 
-          // 藏历信息（双语文）
-          _buildTibetanInfoSection(context, tibetanDate, scale),
+    // 佛教节日
+    if (widget.settings.showFestivals && widget.date.festivals.isNotEmpty) {
+      final buddhistFestivals = widget.date.festivals
+          .where((f) => f.type == FestivalType.buddhist)
+          .toList();
+      
+      if (buddhistFestivals.isNotEmpty) {
+        tiles.add(InfoTile(
+          type: InfoTileType.festival,
+          content: buddhistFestivals.first.name,
+          additionalContent: buddhistFestivals.length > 1 
+              ? buddhistFestivals.skip(1).map((f) => f.name).toList() 
+              : null,
+          explanation: '佛教节日是纪念佛陀及诸菩萨的重要日子。',
+          theme: widget.theme,
+        ));
+      }
+    }
 
-          // 缺日/重日标记（藏历独有）
-          if (tibetanDate.isMissingDay || tibetanDate.isDoubleday)
-            _buildSpecialDateMarkSection(context, tibetanDate, scale),
-
-          // 殊胜日（藏历独有）
-          if (_isSpecialDay(tibetanDate))
-            _buildSpecialDaySection(context, tibetanDate, scale),
-
-          // 节日
-          if (widget.settings.showFestivals && widget.date.festivals.isNotEmpty)
-            _buildFestivalsSection(context, scale),
-        ],
-      ),
-    );
+    return tiles;
   }
 
   /// 空状态
-  Widget _buildEmptyState(BuildContext context, String message, double scale) {
+  Widget _buildEmptyState(BuildContext context, CalendarType type, double scale) {
     return Center(
       child: Padding(
         padding: EdgeInsets.all(context.responsiveSpacing(32)),
@@ -326,7 +401,7 @@ class _DateDetailCardState extends State<DateDetailCard> {
             ),
             SizedBox(height: 16 * scale),
             Text(
-              message,
+              '暂无${_getCalendarName(type)}数据',
               style: TextStyle(
                 fontSize: context.responsiveFontSize(14),
                 color: widget.theme.textSecondary,
@@ -338,952 +413,27 @@ class _DateDetailCardState extends State<DateDetailCard> {
     );
   }
 
-  /// 日期头部
-  Widget _buildDateHeader(BuildContext context, DateTime solarDate, double scale, List<String> weekdays) {
-    return Container(
-      padding: EdgeInsets.all(context.responsiveSpacing(16)),
-      decoration: BoxDecoration(
-        color: widget.theme.primaryColor.withOpacity(0.04),
-        borderRadius: BorderRadius.circular(16 * scale),
-      ),
-      child: Row(
-        children: [
-          // 大日期数字
-          Container(
-            width: 56 * scale,
-            height: 56 * scale,
-            decoration: BoxDecoration(
-              gradient: widget.theme.primaryGradient,
-              borderRadius: BorderRadius.circular(16 * scale),
-            ),
-            child: Center(
-              child: Text(
-                '${solarDate.day}',
-                style: TextStyle(
-                  fontSize: context.responsiveFontSize(28),
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-          SizedBox(width: 16 * scale),
-
-          // 日期信息
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${solarDate.month}月',
-                  style: TextStyle(
-                    fontSize: context.responsiveFontSize(20),
-                    fontWeight: FontWeight.bold,
-                    color: widget.theme.textPrimary,
-                  ),
-                ),
-                SizedBox(height: 4 * scale),
-                Text(
-                  '星期${weekdays[solarDate.weekday - 1]}',
-                  style: TextStyle(
-                    fontSize: context.responsiveFontSize(14),
-                    color: widget.theme.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 农历信息区域
-  Widget _buildLunarInfoSection(BuildContext context, LunarDate lunarDate, double scale) {
-    return Container(
-      margin: EdgeInsets.only(top: context.responsiveSpacing(16)),
-      padding: EdgeInsets.all(context.responsiveSpacing(16)),
-      decoration: BoxDecoration(
-        color: widget.theme.festival.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(14 * scale),
-        border: Border.all(color: widget.theme.festival.withOpacity(0.15)),
-      ),
-      child: Column(
-        children: [
-          // 年份信息
-          if (lunarDate.yearName != null || lunarDate.ganZhi != null)
-            Padding(
-              padding: EdgeInsets.only(bottom: 12 * scale),
-              child: Row(
-                children: [
-                  Text(
-                    '🗓️',
-                    style: TextStyle(fontSize: 16 * scale),
-                  ),
-                  SizedBox(width: 8 * scale),
-                  Text(
-                    [lunarDate.ganZhi, lunarDate.yearName]
-                        .where((s) => s != null)
-                        .join(' · ') ?? '',
-                    style: TextStyle(
-                      fontSize: context.responsiveFontSize(15),
-                      fontWeight: FontWeight.bold,
-                      color: widget.theme.festival,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          // 月日信息
-          Row(
-            children: [
-              _buildLunarInfoChip(
-                context,
-                '🌸',
-                lunarDate.monthName ?? '${lunarDate.month}月',
-                scale,
-              ),
-              SizedBox(width: 12 * scale),
-              _buildLunarInfoChip(
-                context,
-                '🌙',
-                lunarDate.dayName ?? '${lunarDate.day}日',
-                scale,
-              ),
-              if (lunarDate.isLeapMonth) ...[
-                SizedBox(width: 8 * scale),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 8 * scale,
-                    vertical: 4 * scale,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.orange,
-                    borderRadius: BorderRadius.circular(6 * scale),
-                  ),
-                  child: Text(
-                    '闰月',
-                    style: TextStyle(
-                      fontSize: context.responsiveFontSize(11),
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLunarInfoChip(BuildContext context, String emoji, String text, double scale) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(emoji, style: TextStyle(fontSize: 14 * scale)),
-        SizedBox(width: 6 * scale),
-        Text(
-          text,
-          style: TextStyle(
-            fontSize: context.responsiveFontSize(15),
-            fontWeight: FontWeight.w500,
-            color: widget.theme.textPrimary,
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// 藏历信息区域（双语文展示）
-  Widget _buildTibetanInfoSection(BuildContext context, TibetanDate tibetanDate, double scale) {
-    return Container(
-      margin: EdgeInsets.only(top: context.responsiveSpacing(16)),
-      padding: EdgeInsets.all(context.responsiveSpacing(16)),
-      decoration: BoxDecoration(
-        color: widget.theme.specialDay.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(14 * scale),
-        border: Border.all(color: widget.theme.specialDay.withOpacity(0.15)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 年份信息
-          if (tibetanDate.yearElement != null)
-            Padding(
-              padding: EdgeInsets.only(bottom: 12 * scale),
-              child: Row(
-                children: [
-                  Text(
-                    '🏔️',
-                    style: TextStyle(fontSize: 16 * scale),
-                  ),
-                  SizedBox(width: 8 * scale),
-                  Text(
-                    tibetanDate.yearElement!,
-                    style: TextStyle(
-                      fontSize: context.responsiveFontSize(15),
-                      fontWeight: FontWeight.bold,
-                      color: widget.theme.specialDay,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          // 双语文月日信息
-          Container(
-            padding: EdgeInsets.all(context.responsiveSpacing(12)),
-            decoration: BoxDecoration(
-              color: widget.theme.cardColor,
-              borderRadius: BorderRadius.circular(12 * scale),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 中文月份日期
-                Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 10 * scale,
-                        vertical: 4 * scale,
-                      ),
-                      decoration: BoxDecoration(
-                        color: widget.theme.specialDay.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6 * scale),
-                      ),
-                      child: Text(
-                        '中文',
-                        style: TextStyle(
-                          fontSize: context.responsiveFontSize(10),
-                          fontWeight: FontWeight.w600,
-                          color: widget.theme.specialDay,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 10 * scale),
-                    Text(
-                      '${tibetanDate.monthNameChinese ?? '${tibetanDate.month}月'}'
-                      '${tibetanDate.dayNameChinese ?? '${tibetanDate.day}日'}',
-                      style: TextStyle(
-                        fontSize: context.responsiveFontSize(16),
-                        fontWeight: FontWeight.w600,
-                        color: widget.theme.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-                
-                if (tibetanDate.monthNameTibetan != null || tibetanDate.dayNameTibetan != null) ...[
-                  SizedBox(height: 10 * scale),
-                  Divider(color: widget.theme.textHint.withOpacity(0.2), height: 1),
-                  SizedBox(height: 10 * scale),
-                  
-                  // 藏文月份日期
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10 * scale,
-                          vertical: 4 * scale,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF8B5CF6).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6 * scale),
-                        ),
-                        child: Text(
-                          'བོད་ཡིག',
-                          style: TextStyle(
-                            fontSize: context.responsiveFontSize(10),
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF8B5CF6),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 10 * scale),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (tibetanDate.monthNameTibetan != null)
-                              Text(
-                                tibetanDate.monthNameTibetan!,
-                                style: TextStyle(
-                                  fontSize: context.responsiveFontSize(14),
-                                  color: widget.theme.textPrimary,
-                                ),
-                              ),
-                            if (tibetanDate.dayNameTibetan != null)
-                              Text(
-                                tibetanDate.dayNameTibetan!,
-                                style: TextStyle(
-                                  fontSize: context.responsiveFontSize(14),
-                                  color: widget.theme.textSecondary,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 缺日/重日标记区域（藏历独有）
-  Widget _buildSpecialDateMarkSection(BuildContext context, TibetanDate tibetanDate, double scale) {
-    List<Widget> marks = [];
-
-    if (tibetanDate.isMissingDay) {
-      marks.add(_buildMarkChip(
-        context,
-        '缺日',
-        '藏历中此日不存在，顺延至下一日',
-        const Color(0xFFEF4444),
-        scale,
-      ));
-    }
-
-    if (tibetanDate.isDoubleday) {
-      marks.add(_buildMarkChip(
-        context,
-        '重日',
-        '藏历中此日重复出现两次',
-        const Color(0xFF10B981),
-        scale,
-      ));
-    }
-
-    return Container(
-      margin: EdgeInsets.only(top: context.responsiveSpacing(16)),
-      child: Wrap(
-        spacing: 8 * scale,
-        runSpacing: 8 * scale,
-        children: marks,
-      ),
-    );
-  }
-
-  Widget _buildMarkChip(
-    BuildContext context,
-    String label,
-    String description,
-    Color color,
-    double scale,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(context.responsiveSpacing(12)),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(12 * scale),
-        border: Border.all(color: color.withOpacity(0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: 10 * scale,
-              vertical: 4 * scale,
-            ),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(6 * scale),
-            ),
-            child: Text(
-              label,
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: context.responsiveFontSize(12),
-              ),
-            ),
-          ),
-          SizedBox(width: 10 * scale),
-          Flexible(
-            child: Text(
-              description,
-              style: TextStyle(
-                fontSize: context.responsiveFontSize(11),
-                color: color.withOpacity(0.9),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 节气区域（农历独有）
-  Widget _buildSolarTermSection(BuildContext context, String solarTerm, double scale) {
-    return Container(
-      margin: EdgeInsets.only(top: context.responsiveSpacing(16)),
-      padding: EdgeInsets.all(context.responsiveSpacing(14)),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF10B981).withOpacity(0.1),
-            const Color(0xFF059669).withOpacity(0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12 * scale),
-        border: Border.all(color: const Color(0xFF10B981).withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(8 * scale),
-            decoration: BoxDecoration(
-              color: const Color(0xFF10B981),
-              borderRadius: BorderRadius.circular(8 * scale),
-            ),
-            child: Icon(
-              Icons.wb_sunny,
-              color: Colors.white,
-              size: 18 * scale,
-            ),
-          ),
-          SizedBox(width: 12 * scale),
-          Text(
-            solarTerm,
-            style: TextStyle(
-              fontSize: context.responsiveFontSize(16),
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF059669),
-            ),
-          ),
-          SizedBox(width: 8 * scale),
-          Text(
-            '节气',
-            style: TextStyle(
-              fontSize: context.responsiveFontSize(12),
-              color: const Color(0xFF10B981),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 五行纳音区域（农历独有）
-  Widget _buildFiveElementsSection(BuildContext context, String fiveElements, double scale) {
-    return Container(
-      margin: EdgeInsets.only(top: context.responsiveSpacing(16)),
-      padding: EdgeInsets.all(context.responsiveSpacing(14)),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF8B5CF6).withOpacity(0.1),
-            const Color(0xFF7C3AED).withOpacity(0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12 * scale),
-        border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(8 * scale),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF8B5CF6),
-                  borderRadius: BorderRadius.circular(8 * scale),
-                ),
-                child: Icon(
-                  Icons.auto_awesome,
-                  color: Colors.white,
-                  size: 18 * scale,
-                ),
-              ),
-              SizedBox(width: 12 * scale),
-              Text(
-                fiveElements,
-                style: TextStyle(
-                  fontSize: context.responsiveFontSize(15),
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF7C3AED),
-                ),
-              ),
-              SizedBox(width: 8 * scale),
-              Text(
-                '五行',
-                style: TextStyle(
-                  fontSize: context.responsiveFontSize(12),
-                  color: const Color(0xFF8B5CF6),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8 * scale),
-          Text(
-            '纳音五行：干支对应的五行属性，用于命理推算',
-            style: TextStyle(
-              fontSize: context.responsiveFontSize(11),
-              color: const Color(0xFF7C3AED).withOpacity(0.7),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 冲煞区域（农历独有）
-  Widget _buildChongShaSection(BuildContext context, String chongSha, double scale) {
-    return Container(
-      margin: EdgeInsets.only(top: context.responsiveSpacing(16)),
-      padding: EdgeInsets.all(context.responsiveSpacing(14)),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFFEF4444).withOpacity(0.1),
-            const Color(0xFFDC2626).withOpacity(0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12 * scale),
-        border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(8 * scale),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEF4444),
-                  borderRadius: BorderRadius.circular(8 * scale),
-                ),
-                child: Icon(
-                  Icons.warning_amber_rounded,
-                  color: Colors.white,
-                  size: 18 * scale,
-                ),
-              ),
-              SizedBox(width: 12 * scale),
-              Text(
-                chongSha,
-                style: TextStyle(
-                  fontSize: context.responsiveFontSize(15),
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFFDC2626),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8 * scale),
-          Text(
-            '冲：与当日地支相冲的生肖；煞：不宜的方位',
-            style: TextStyle(
-              fontSize: context.responsiveFontSize(11),
-              color: const Color(0xFFDC2626).withOpacity(0.7),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 彭祖百忌区域（农历独有）
-  Widget _buildPengzuSection(BuildContext context, String pengzuTaboo, double scale) {
-    return Container(
-      margin: EdgeInsets.only(top: context.responsiveSpacing(16)),
-      padding: EdgeInsets.all(context.responsiveSpacing(14)),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF59E0B).withOpacity(0.08),
-        borderRadius: BorderRadius.circular(12 * scale),
-        border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(8 * scale),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF59E0B),
-                  borderRadius: BorderRadius.circular(8 * scale),
-                ),
-                child: Icon(
-                  Icons.menu_book,
-                  color: Colors.white,
-                  size: 18 * scale,
-                ),
-              ),
-              SizedBox(width: 12 * scale),
-              Text(
-                '彭祖百忌',
-                style: TextStyle(
-                  fontSize: context.responsiveFontSize(14),
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFFD97706),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8 * scale),
-          Text(
-            '彭祖传说活了八百岁，总结的每日宜忌经验',
-            style: TextStyle(
-              fontSize: context.responsiveFontSize(11),
-              color: const Color(0xFFD97706).withOpacity(0.7),
-            ),
-          ),
-          SizedBox(height: 10 * scale),
-          Text(
-            pengzuTaboo,
-            style: TextStyle(
-              fontSize: context.responsiveFontSize(13),
-              color: const Color(0xFF92400E),
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 胎神方位区域（农历独有）
-  Widget _buildFetusGodSection(BuildContext context, String fetusGodDirection, double scale) {
-    return Container(
-      margin: EdgeInsets.only(top: context.responsiveSpacing(16)),
-      padding: EdgeInsets.all(context.responsiveSpacing(14)),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEC4899).withOpacity(0.08),
-        borderRadius: BorderRadius.circular(12 * scale),
-        border: Border.all(color: const Color(0xFFEC4899).withOpacity(0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(8 * scale),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEC4899),
-                  borderRadius: BorderRadius.circular(8 * scale),
-                ),
-                child: Icon(
-                  Icons.child_care,
-                  color: Colors.white,
-                  size: 18 * scale,
-                ),
-              ),
-              SizedBox(width: 12 * scale),
-              Text(
-                '胎神',
-                style: TextStyle(
-                  fontSize: context.responsiveFontSize(14),
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFFDB2777),
-                ),
-              ),
-              SizedBox(width: 8 * scale),
-              Expanded(
-                child: Text(
-                  fetusGodDirection,
-                  style: TextStyle(
-                    fontSize: context.responsiveFontSize(13),
-                    color: const Color(0xFF9D174D),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8 * scale),
-          Text(
-            '胎神所在方位，孕妇应避免在此方位动土或搬动',
-            style: TextStyle(
-              fontSize: context.responsiveFontSize(11),
-              color: const Color(0xFFDB2777).withOpacity(0.7),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 节日区域
-  Widget _buildFestivalsSection(BuildContext context, double scale) {
-    return Container(
-      margin: EdgeInsets.only(top: context.responsiveSpacing(16)),
-      child: Wrap(
-        spacing: 8 * scale,
-        runSpacing: 8 * scale,
-        children: widget.date.festivals.map((festival) {
-          final isBuddhist = festival.type == FestivalType.buddhist;
-          return Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: 14 * scale,
-              vertical: 8 * scale,
-            ),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isBuddhist
-                    ? [const Color(0xFFFFB300), widget.theme.specialDay]
-                    : [widget.theme.festival, const Color(0xFFDC2626)],
-              ),
-              borderRadius: BorderRadius.circular(12 * scale),
-              boxShadow: [
-                BoxShadow(
-                  color: (isBuddhist ? widget.theme.specialDay : widget.theme.festival)
-                      .withOpacity(0.3),
-                  blurRadius: 6 * scale,
-                  offset: Offset(0, 2 * scale),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (festival.nameTibetan != null) ...[
-                  Text(
-                    festival.nameTibetan!,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                      fontSize: context.responsiveFontSize(11),
-                    ),
-                  ),
-                  SizedBox(width: 6 * scale),
-                ],
-                Text(
-                  festival.name,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: context.responsiveFontSize(12),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  /// 殊胜日区域（藏历独有）
-  Widget _buildSpecialDaySection(BuildContext context, TibetanDate tibetanDate, double scale) {
-    final specialDayName = _getSpecialDayName(tibetanDate.day);
-    final specialDayDesc = _getSpecialDayDescription(tibetanDate.day);
-    if (specialDayName == null) return const SizedBox.shrink();
-
-    return Container(
-      margin: EdgeInsets.only(top: context.responsiveSpacing(16)),
-      padding: EdgeInsets.all(context.responsiveSpacing(14)),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            widget.theme.specialDay.withOpacity(0.12),
-            const Color(0xFFFFB300).withOpacity(0.06),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12 * scale),
-        border: Border.all(color: widget.theme.specialDay.withOpacity(0.25)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(8 * scale),
-                decoration: BoxDecoration(
-                  color: widget.theme.specialDay,
-                  borderRadius: BorderRadius.circular(8 * scale),
-                ),
-                child: Icon(
-                  Icons.star,
-                  color: Colors.white,
-                  size: 18 * scale,
-                ),
-              ),
-              SizedBox(width: 12 * scale),
-              Text(
-                specialDayName,
-                style: TextStyle(
-                  fontSize: context.responsiveFontSize(15),
-                  fontWeight: FontWeight.bold,
-                  color: widget.theme.specialDay,
-                ),
-              ),
-              SizedBox(width: 8 * scale),
-              Text(
-                '殊胜日',
-                style: TextStyle(
-                  fontSize: context.responsiveFontSize(12),
-                  color: const Color(0xFFFFB300),
-                ),
-              ),
-            ],
-          ),
-          if (specialDayDesc != null) ...[
-            SizedBox(height: 8 * scale),
-            Text(
-              specialDayDesc,
-              style: TextStyle(
-                fontSize: context.responsiveFontSize(11),
-                color: widget.theme.specialDay.withOpacity(0.7),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  /// 获取殊胜日说明
-  String? _getSpecialDayDescription(int day) {
-    switch (day) {
-      case 1:
-        return '初一为吉祥日，宜祈福修法';
-      case 8:
-        return '药师佛节日，药师法门修行殊胜日';
-      case 10:
-        return '莲花生大士荟供日，修持莲师法门功德倍增';
-      case 15:
-        return '满月日，佛陀节日，功德增长十万倍';
-      case 18:
-        return '观音菩萨节日，慈悲法门修行殊胜';
-      case 25:
-        return '空行母荟供日，女性本尊修行殊胜';
-      case 30:
-        return '新月日，释迦牟尼佛节日，功德增长百万倍';
-      default:
-        return null;
-    }
-  }
-
-  /// 宜忌区域（农历独有）
-  Widget _buildDailyInfoSection(BuildContext context, DailyInfo info, double scale) {
-    final hasYi = info.suitable.isNotEmpty;
-    final hasJi = info.unsuitable.isNotEmpty;
-
-    if (!hasYi && !hasJi) return const SizedBox.shrink();
-
-    return Container(
-      margin: EdgeInsets.only(top: context.responsiveSpacing(16)),
-      child: Column(
-        children: [
-          if (hasYi)
-            _buildYiJiRow(
-              context,
-              '宜',
-              info.suitable,
-              const Color(0xFF10B981),
-              scale,
-            ),
-          if (hasYi && hasJi) SizedBox(height: 10 * scale),
-          if (hasJi)
-            _buildYiJiRow(
-              context,
-              '忌',
-              info.unsuitable,
-              widget.theme.festival,
-              scale,
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildYiJiRow(
-    BuildContext context,
-    String label,
-    List<String> items,
-    Color color,
-    double scale,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(context.responsiveSpacing(12)),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(12 * scale),
-        border: Border.all(color: color.withOpacity(0.15)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: 10 * scale,
-              vertical: 4 * scale,
-            ),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(6 * scale),
-            ),
-            child: Text(
-              label,
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: context.responsiveFontSize(12),
-              ),
-            ),
-          ),
-          SizedBox(width: 12 * scale),
-          Expanded(
-            child: Text(
-              items.join(' · '),
-              style: TextStyle(
-                color: color.withOpacity(0.9),
-                fontSize: context.responsiveFontSize(13),
-                height: 1.5,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   /// 计算内容高度
   double _calculateContentHeight(BuildContext context, double scale) {
-    // 基础高度：日期头部 + 内边距
-    double height = 120 * scale;
-
-    // 根据历法类型添加额外高度
+    // 根据磁贴数量动态计算高度
+    int tileCount = 0;
+    
     for (final type in _calendarTypes) {
-      switch (type) {
-        case CalendarType.lunar:
-          height += 200 * scale; // 农历信息 + 节气 + 宜忌
-          break;
-        case CalendarType.tibetan:
-          height += 150 * scale; // 藏历信息 + 殊胜日
-          break;
-        case CalendarType.solar:
-        case CalendarType.islamic:
-        case CalendarType.dai:
-        case CalendarType.yi:
-          height += 60 * scale; // 节日等
-          break;
-      }
+      final tiles = _buildTilesForCalendar(type, scale);
+      tileCount = tileCount > tiles.length ? tileCount : tiles.length;
     }
-
-    // 节日高度
-    if (widget.date.festivals.isNotEmpty) {
-      height += 60 * scale;
-    }
-
-    // 最大高度限制
-    return height.clamp(200.0, 400.0);
+    
+    // 基础高度 + 每个磁贴的高度
+    final baseHeight = 80.0; // 标题 + padding
+    final tileHeight = 100.0; // 每个磁贴大约高度
+    final spacing = 12.0;
+    
+    final totalHeight = baseHeight + (tileCount * (tileHeight + spacing)) * scale;
+    
+    // 限制最大高度
+    return totalHeight.clamp(200.0, 600.0);
   }
 
-  /// 检查是否是殊胜日
   bool _isSpecialDay(TibetanDate? tibetanDate) {
     if (tibetanDate == null) return false;
     return tibetanDate.day == 1 ||
@@ -1295,50 +445,95 @@ class _DateDetailCardState extends State<DateDetailCard> {
            tibetanDate.day == 30;
   }
 
-  /// 获取殊胜日名称
   String? _getSpecialDayName(int day) {
     switch (day) {
       case 1: return '吉祥日';
       case 8: return '药师佛节日';
       case 10: return '莲师荟供日';
       case 15: return '佛陀节日';
+      case 18: return '观音菩萨节日';
       case 25: return '空行母荟供日';
       case 30: return '释迦牟尼佛节日';
       default: return null;
     }
   }
 
+  String? _getSpecialDayDescription(int day) {
+    switch (day) {
+      case 1: return '初一为吉祥日，宜祈福修法';
+      case 8: return '药师佛节日，药师法门修行殊胜日';
+      case 10: return '莲花生大士荟供日，修持莲师法门功德倍增';
+      case 15: return '满月日，佛陀节日，功德增长十万倍';
+      case 18: return '观音菩萨节日，慈悲法门修行殊胜';
+      case 25: return '空行母荟供日，女性本尊修行殊胜';
+      case 30: return '新月日，释迦牟尼佛节日，功德增长百万倍';
+      default: return null;
+    }
+  }
+
   String _getCalendarIcon(CalendarType type) {
     switch (type) {
-      case CalendarType.solar:
-        return '📅';
-      case CalendarType.lunar:
-        return '🌸';
-      case CalendarType.tibetan:
-        return '🏔️';
-      case CalendarType.islamic:
-        return '🌙';
-      case CalendarType.dai:
-        return '🌴';
-      case CalendarType.yi:
-        return '🔥';
+      case CalendarType.solar: return '📅';
+      case CalendarType.lunar: return '🌸';
+      case CalendarType.tibetan: return '🏔️';
+      case CalendarType.islamic: return '🌙';
+      case CalendarType.dai: return '🌴';
+      case CalendarType.yi: return '🔥';
     }
   }
 
   String _getCalendarName(CalendarType type) {
     switch (type) {
-      case CalendarType.solar:
-        return '公历';
-      case CalendarType.lunar:
-        return '农历';
-      case CalendarType.tibetan:
-        return '藏历';
-      case CalendarType.islamic:
-        return '伊斯兰历';
-      case CalendarType.dai:
-        return '傣历';
-      case CalendarType.yi:
-        return '彝历';
+      case CalendarType.solar: return '公历';
+      case CalendarType.lunar: return '农历';
+      case CalendarType.tibetan: return '藏历';
+      case CalendarType.islamic: return '伊斯兰历';
+      case CalendarType.dai: return '傣历';
+      case CalendarType.yi: return '彝历';
     }
+  }
+
+  /// 生成冲煞的详细释义
+  String _getChongShaExplanation(String chongSha) {
+    // 解析冲煞内容，如 "冲马煞南"
+    String explanation = '冲煞是传统择日学的重要参考。';
+
+    // 解析冲的生肖
+    final chongMatch = RegExp(r'冲(\w)').firstMatch(chongSha);
+    if (chongMatch != null) {
+      final animal = chongMatch.group(1);
+      explanation += '「冲$animal」表示今日与属$animal的人相冲，属$animal者今日宜谨慎行事。';
+    }
+
+    // 解析煞的方位
+    final shaMatch = RegExp(r'煞(\w)').firstMatch(chongSha);
+    if (shaMatch != null) {
+      final direction = shaMatch.group(1);
+      final fullDirection = _getFullDirection(direction ?? '');
+      explanation += '「煞$direction」表示今日$fullDirection方位有凶神，不宜向此方位出行或动土。';
+    }
+
+    return explanation;
+  }
+
+  /// 获取完整方位名称
+  String _getFullDirection(String direction) {
+    switch (direction) {
+      case '东': return '东方';
+      case '南': return '南方';
+      case '西': return '西方';
+      case '北': return '北方';
+      default: return direction;
+    }
+  }
+
+  /// 从纳音五行中提取五行元素
+  String _extractFiveElement(String fiveElements) {
+    if (fiveElements.contains('金')) return '金';
+    if (fiveElements.contains('木')) return '木';
+    if (fiveElements.contains('水')) return '水';
+    if (fiveElements.contains('火')) return '火';
+    if (fiveElements.contains('土')) return '土';
+    return fiveElements;
   }
 }
