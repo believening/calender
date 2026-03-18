@@ -59,7 +59,7 @@ class MultiCalendarApp extends StatelessWidget {
                 backgroundColor: Color(0xFFFAF5FF),
                 foregroundColor: Color(0xFF4C1D95),
               ),
-              cardTheme: CardTheme(
+              cardTheme: CardThemeData(
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -144,7 +144,7 @@ class MultiCalendarApp extends StatelessWidget {
                 backgroundColor: Color(0xFF1F1B24),
                 foregroundColor: Color(0xFFEDE9FE),
               ),
-              cardTheme: CardTheme(
+              cardTheme: CardThemeData(
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
