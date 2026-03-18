@@ -19,8 +19,21 @@ class MetroCalendarView extends StatefulWidget {
 }
 
 class _MetroCalendarViewState extends State<MetroCalendarView> {
+  late CalendarViewModel _viewModel;
   CalendarViewMode _currentViewMode = CalendarViewMode.month;
   double _gestureScale = 1.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _viewModel = CalendarViewModel();
+  }
+
+  @override
+  void dispose() {
+    _viewModel.dispose();
+    super.dispose();
+  }
 
   void _handleViewModeChanged(CalendarViewMode mode) {
     setState(() {
@@ -32,8 +45,9 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF1A1A2E),
-      body: Consumer<CalendarViewModel>(
-        builder: (context, vm, _) {
+      body: ListenableBuilder(
+        listenable: _viewModel,
+        builder: (context, _) {
           final settings = context.watch<CalendarSettingsProvider>();
           final locale = context.watch<LocaleProvider>();
           final deviceType = context.deviceType;
@@ -47,7 +61,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
                 floating: true,
                 backgroundColor: Colors.transparent,
                 flexibleSpace: FlexibleSpaceBar(
-                  title: _buildHeader(vm, isMobile),
+                  title: _buildHeader(_viewModel, isMobile),
                   titlePadding: EdgeInsets.only(
                     left: isMobile ? 12 : 20,
                     bottom: isMobile ? 8 : 12,
@@ -71,7 +85,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
                 padding: EdgeInsets.all(isMobile ? 8 : 12),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    _buildGestureTileGrid(context, vm, settings, locale, deviceType),
+                    _buildGestureTileGrid(context, _viewModel, settings, locale, deviceType),
                   ]),
                 ),
               ),
@@ -82,8 +96,8 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
     );
   }
 
-  Widget _buildHeader(CalendarViewModel vm, bool isMobile) {
-    final month = vm.currentMonth;
+  Widget _buildHeader(CalendarViewModel _viewModel, bool isMobile) {
+    final month = _viewModel.currentMonth;
     final weekdays = ['一', '二', '三', '四', '五', '六', '日'];
 
     return Row(
@@ -168,12 +182,12 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
 
   Widget _buildGestureTileGrid(
     BuildContext context,
-    CalendarViewModel vm,
+    CalendarViewModel _viewModel,
     CalendarSettingsProvider settings,
     LocaleProvider locale,
     DeviceType deviceType,
   ) {
-    final tiles = _buildAllTiles(context, vm, settings, locale);
+    final tiles = _buildAllTiles(context, _viewModel, settings, locale);
     final config = _getTileConfig(deviceType);
 
     return GestureDetector(
@@ -279,7 +293,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
 
   List<MetroTile> _buildAllTiles(
     BuildContext context,
-    CalendarViewModel vm,
+    CalendarViewModel _viewModel,
     CalendarSettingsProvider settings,
     LocaleProvider locale,
   ) {
@@ -290,38 +304,38 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
     tiles.add(MetroTile(
       size: MetroTileSize.large,
       backgroundColor: MetroColors.calendar,
-      title: '${vm.currentMonth.year}年${vm.currentMonth.month}月',
+      title: '${_viewModel.currentMonth.year}年${_viewModel.currentMonth.month}月',
       enableFlip: false,
-      child: _buildEnhancedCalendarGrid(vm, settings, isMobile),
+      child: _buildEnhancedCalendarGrid(_viewModel, settings, isMobile),
     ));
 
     // 添加其他磁贴
-    tiles.addAll(_buildInfoTiles(vm, settings, locale, isMobile));
+    tiles.addAll(_buildInfoTiles(_viewModel, settings, locale, isMobile));
 
     return tiles;
   }
 
   Widget _buildEnhancedCalendarGrid(
-    CalendarViewModel vm,
+    CalendarViewModel _viewModel,
     CalendarSettingsProvider settings,
     bool isMobile,
   ) {
-    final dates = vm.monthDates;
+    final dates = _viewModel.monthDates;
     final now = DateTime.now();
 
     // 根据视图模式构建不同的内容
     switch (_currentViewMode) {
       case CalendarViewMode.month:
-        return _buildMonthGrid(vm, dates, now, isMobile);
+        return _buildMonthGrid(_viewModel, dates, now, isMobile);
       case CalendarViewMode.week:
-        return _buildWeekGrid(vm, isMobile);
+        return _buildWeekGrid(_viewModel, isMobile);
       case CalendarViewMode.day:
-        return _buildDayView(vm, isMobile);
+        return _buildDayView(_viewModel, isMobile);
     }
   }
 
   Widget _buildMonthGrid(
-    CalendarViewModel vm,
+    CalendarViewModel _viewModel,
     List<CalendarDate> dates,
     DateTime now,
     bool isMobile,
@@ -372,8 +386,8 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
 
                 final date = dates[index];
                 final isToday = _isSameDay(date.solarDate, now);
-                final isSelected = _isSameDay(date.solarDate, vm.selectedDate);
-                final isCurrentMonth = date.solarDate.month == vm.currentMonth.month;
+                final isSelected = _isSameDay(date.solarDate, _viewModel.selectedDate);
+                final isCurrentMonth = date.solarDate.month == _viewModel.currentMonth.month;
 
                 return _buildDateCell(
                   date,
@@ -381,7 +395,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
                   isSelected,
                   isCurrentMonth,
                   isMobile,
-                  vm,
+                  _viewModel,
                 );
               },
             ),
@@ -397,7 +411,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
     bool isSelected,
     bool isCurrentMonth,
     bool isMobile,
-    CalendarViewModel vm,
+    CalendarViewModel _viewModel,
   ) {
     final hasFestival = date.festivals.isNotEmpty;
     final hasSolarTerm = date.dailyInfo?.note != null;
@@ -406,7 +420,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        vm.selectDate(date.solarDate);
+        _viewModel.selectDate(date.solarDate);
       },
       child: Container(
         decoration: BoxDecoration(
@@ -475,8 +489,8 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
     );
   }
 
-  Widget _buildWeekGrid(CalendarViewModel vm, bool isMobile) {
-    final selectedDate = vm.selectedDate;
+  Widget _buildWeekGrid(CalendarViewModel _viewModel, bool isMobile) {
+    final selectedDate = _viewModel.selectedDate;
     final now = DateTime.now();
 
     // 计算当前周的日期
@@ -485,7 +499,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
 
     for (int i = 0; i < 7; i++) {
       final date = startOfWeek.add(Duration(days: i));
-      final calendarDate = vm.pluginManager.convertWithAllPlugins(date);
+      final calendarDate = _viewModel.pluginManager.convertWithAllPlugins(date);
       weekDates.add(calendarDate);
     }
 
@@ -504,7 +518,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
             child: GestureDetector(
               onTap: () {
                 HapticFeedback.lightImpact();
-                vm.selectDate(date.solarDate);
+                _viewModel.selectDate(date.solarDate);
               },
               child: Container(
                 margin: EdgeInsets.symmetric(horizontal: isMobile ? 1 : 2),
@@ -554,8 +568,8 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
     );
   }
 
-  Widget _buildDayView(CalendarViewModel vm, bool isMobile) {
-    final selectedDate = vm.selectedCalendarDate;
+  Widget _buildDayView(CalendarViewModel _viewModel, bool isMobile) {
+    final selectedDate = _viewModel.selectedCalendarDate;
     final now = DateTime.now();
 
     if (selectedDate == null) {
@@ -676,13 +690,13 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
   }
 
   List<MetroTile> _buildInfoTiles(
-    CalendarViewModel vm,
+    CalendarViewModel _viewModel,
     CalendarSettingsProvider settings,
     LocaleProvider locale,
     bool isMobile,
   ) {
     final tiles = <MetroTile>[];
-    final selectedDate = vm.selectedCalendarDate;
+    final selectedDate = _viewModel.selectedCalendarDate;
 
     // 2. 选中日期磁贴（宽磁贴 2x1）
     if (selectedDate != null) {
