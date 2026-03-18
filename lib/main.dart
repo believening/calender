@@ -3,7 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'core/providers/locale_provider.dart';
 import 'core/providers/calendar_settings_provider.dart';
-import 'ui/views/calendar_view.dart';
+import 'ui/views/metro_calendar_view.dart';
 
 void main() {
   runApp(const MultiCalendarApp());
@@ -59,7 +59,7 @@ class MultiCalendarApp extends StatelessWidget {
                 backgroundColor: Color(0xFFFAF5FF),
                 foregroundColor: Color(0xFF4C1D95),
               ),
-              cardTheme: CardThemeData(
+              cardTheme: CardTheme(
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -144,7 +144,7 @@ class MultiCalendarApp extends StatelessWidget {
                 backgroundColor: Color(0xFF1F1B24),
                 foregroundColor: Color(0xFFEDE9FE),
               ),
-              cardTheme: CardThemeData(
+              cardTheme: CardTheme(
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -205,7 +205,7 @@ class MultiCalendarApp extends StatelessWidget {
               ),
             ),
             themeMode: ThemeMode.system,
-            home: const CalendarView(),
+            home: const MetroCalendarView(),
           );
         },
       ),
