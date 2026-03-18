@@ -59,14 +59,6 @@ class MultiCalendarApp extends StatelessWidget {
                 backgroundColor: Color(0xFFFAF5FF),
                 foregroundColor: Color(0xFF4C1D95),
               ),
-              cardTheme: CardThemeData(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                color: Colors.white,
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              ),
               textTheme: const TextTheme(
                 headlineLarge: TextStyle(
                   fontSize: 32,
@@ -143,14 +135,6 @@ class MultiCalendarApp extends StatelessWidget {
                 scrolledUnderElevation: 0.5,
                 backgroundColor: Color(0xFF1F1B24),
                 foregroundColor: Color(0xFFEDE9FE),
-              ),
-              cardTheme: CardThemeData(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                color: const Color(0xFF2D2831),
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
               textTheme: const TextTheme(
                 headlineLarge: TextStyle(
