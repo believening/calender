@@ -36,19 +36,28 @@ class CalendarViewModel extends ChangeNotifier {
     _pluginManager.registerPlugin(TibetanCalendarPlugin());
   }
 
-
   void _loadMonthData() {
     _monthDates.clear();
     _monthFestivals.clear();
 
+    // 获取当月第一天
+    DateTime firstDay = DateTime(_currentMonth.year, _currentMonth.month, 1);
+
+    // 计算日历开始日期（包含上月日期填充）
+    int weekday = firstDay.weekday;
+    DateTime calendarStart = firstDay.subtract(Duration(days: weekday - 1));
+
+    // 生成6周42天的日历数据
+    for (int i = 0; i < 42; i++) {
+      DateTime date = calendarStart.add(Duration(days: i));
+      var calendarDate = _pluginManager.convertWithAllPlugins(date);
+      _monthDates.add(calendarDate);
+    }
+
     // 获取当月节日
     _monthFestivals = _pluginManager.getAllFestivals(_currentMonth.year, _currentMonth.month);
 
-    notifyListeners();
-  }    // 获取当月节日
-    _monthFestivals = _pluginManager.getAllFestivals(_currentMonth.year, _currentMonth.month);
-
-    // 确保选中日期被初始化
+    // 初始化选中日期的日历数据（如果还没有初始化）
     if (_selectedCalendarDate == null) {
       _selectedCalendarDate = _pluginManager.convertWithAllPlugins(_selectedDate);
     }
