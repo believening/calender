@@ -10,6 +10,19 @@ import '../widgets/metro_tile.dart';
 import '../widgets/calendar_grid_tile.dart';
 import '../widgets/responsive_tile_grid.dart';
 
+/// 历法系统磁贴组
+class CalendarSystemGroup {
+  final CalendarType type;
+  final String name;
+  final List<MetroTile> tiles;
+
+  CalendarSystemGroup({
+    required this.type,
+    required this.name,
+    required this.tiles,
+  });
+}
+
 /// Windows 8 Metro 风格日历视图
 class MetroCalendarView extends StatefulWidget {
   const MetroCalendarView({super.key});
@@ -21,7 +34,8 @@ class MetroCalendarView extends StatefulWidget {
 class _MetroCalendarViewState extends State<MetroCalendarView> {
   late CalendarViewModel _viewModel;
   CalendarViewMode _currentViewMode = CalendarViewMode.month;
-  double _gestureScale = 1.0;
+  final PageController _calendarPageController = PageController();
+  int _currentCalendarPage = 0;
 
   @override
   void initState() {
@@ -32,6 +46,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
   @override
   void dispose() {
     _viewModel.dispose();
+    _calendarPageController.dispose();
     super.dispose();
   }
 
@@ -187,13 +202,19 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
     LocaleProvider locale,
     DeviceType deviceType,
   ) {
-    final tiles = _buildAllTiles(context, _viewModel, settings, locale);
+    final isMobile = context.isMobile;
     final config = _getTileConfig(deviceType);
 
+    // 获取日历网格磁贴
+    final calendarGridTile = _buildCalendarGridTile(_viewModel, settings, isMobile);
+
+    // 获取所有启用的历法系统
+    final calendarSystems = _getEnabledCalendarSystems(settings, _viewModel, locale, isMobile);
+
+    // 选中日期磁贴（始终显示在日历网格下方）
+    final selectedDateTile = _buildSelectedDateTile(_viewModel, settings, isMobile);
+
     return GestureDetector(
-      onScaleStart: (details) {
-        _gestureScale = 1.0;
-      },
       onScaleUpdate: (details) {
         final newScale = details.scale;
         // 根据缩放方向切换视图
@@ -205,10 +226,241 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
           _handleViewModeChanged(CalendarViewMode.day);
         }
       },
-      onScaleEnd: (details) {
-        _gestureScale = 1.0;
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 日历网格磁贴
+          _buildSingleTileWidget(calendarGridTile, config, deviceType),
+
+          // 选中日期磁贴
+          if (selectedDateTile != null)
+            _buildSingleTileWidget(selectedDateTile, config, deviceType),
+
+          // PageView 用于历法系统磁贴组
+          if (calendarSystems.isNotEmpty)
+            _buildCalendarSystemPageView(calendarSystems, config, deviceType, isMobile),
+        ],
+      ),
+    );
+  }
+
+  /// 构建选中日期磁贴
+  MetroTile? _buildSelectedDateTile(
+    CalendarViewModel _viewModel,
+    CalendarSettingsProvider settings,
+    bool isMobile,
+  ) {
+    final selectedDate = _viewModel.selectedCalendarDate;
+    if (selectedDate == null) return null;
+
+    return MetroTile(
+      size: MetroTileSize.wide,
+      backgroundColor: MetroColors.calendar.withOpacity(0.8),
+      title: '选中日期',
+      mainContent: '${selectedDate.solarDate.day}',
+      subtitle: _getSelectedDateSubtitle(selectedDate, settings),
+      explanation: '${selectedDate.solarDate.year}年${selectedDate.solarDate.month}月${selectedDate.solarDate.day}日，'
+          '${_getWeekdayName(selectedDate.solarDate.weekday)}。'
+          '${selectedDate.lunarDate != null ? '农历${selectedDate.lunarDate!.yearName ?? ""}年，${selectedDate.lunarDate!.monthName ?? "${selectedDate.lunarDate!.month}月"}${selectedDate.lunarDate!.dayName ?? "${selectedDate.lunarDate!.day}日"}。' : ''}',
+    );
+  }
+
+  /// 构建单个磁贴组件
+  Widget _buildSingleTileWidget(
+    MetroTile tile,
+    ResponsiveTileConfig config,
+    DeviceType deviceType,
+  ) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = config.getColumns(deviceType);
+        final spacing = context.responsiveSpacing(config.spacing);
+        final tileHeight = context.responsive(config.tileHeight);
+        final tileWidth = (constraints.maxWidth - spacing * (columns - 1)) / columns;
+
+        final int crossCount = tile.size.crossAxisCellCount;
+        final int mainCount = tile.size.mainAxisCellCount;
+
+        final actualCrossCount = crossCount > columns ? columns : crossCount;
+        final width = tileWidth * actualCrossCount + spacing * (actualCrossCount - 1);
+        final height = tileHeight * mainCount + spacing * (mainCount - 1);
+
+        return Padding(
+          padding: EdgeInsets.only(bottom: spacing),
+          child: SizedBox(
+            width: width,
+            height: height,
+            child: tile,
+          ),
+        );
       },
-      child: _buildResponsiveTileGrid(tiles, config, deviceType),
+    );
+  }
+
+  /// 构建 PageView 用于历法系统磁贴组
+  Widget _buildCalendarSystemPageView(
+    List<CalendarSystemGroup> calendarSystems,
+    ResponsiveTileConfig config,
+    DeviceType deviceType,
+    bool isMobile,
+  ) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 历法系统指示器
+            if (calendarSystems.length > 1)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(calendarSystems.length, (index) {
+                    final isActive = index == _currentCalendarPage;
+                    return GestureDetector(
+                      onTap: () {
+                        _calendarPageController.animateToPage(
+                          index,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isActive
+                              ? Colors.white.withOpacity(0.2)
+                              : Colors.white.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          calendarSystems[index].name,
+                          style: TextStyle(
+                            color: isActive ? Colors.white : Colors.white70,
+                            fontSize: isMobile ? 11 : 12,
+                            fontWeight: isActive ? FontWeight.w500 : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+
+            // PageView
+            SizedBox(
+              height: _calculatePageViewHeight(calendarSystems, config, deviceType, constraints),
+              child: PageView.builder(
+                controller: _calendarPageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentCalendarPage = index;
+                  });
+                },
+                itemCount: calendarSystems.length,
+                itemBuilder: (context, index) {
+                  final system = calendarSystems[index];
+                  return _buildTileGroup(system.tiles, config, deviceType);
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// 计算 PageView 高度
+  double _calculatePageViewHeight(
+    List<CalendarSystemGroup> calendarSystems,
+    ResponsiveTileConfig config,
+    DeviceType deviceType,
+    BoxConstraints constraints,
+  ) {
+    if (calendarSystems.isEmpty) return 0;
+
+    // 找出所有系统中最大的高度
+    double maxHeight = 0;
+    for (final system in calendarSystems) {
+      final height = _calculateTilesHeight(system.tiles, config, deviceType, constraints);
+      if (height > maxHeight) maxHeight = height;
+    }
+
+    return maxHeight;
+  }
+
+  /// 计算磁贴组高度
+  double _calculateTilesHeight(
+    List<MetroTile> tiles,
+    ResponsiveTileConfig config,
+    DeviceType deviceType,
+    BoxConstraints constraints,
+  ) {
+    final columns = config.getColumns(deviceType);
+    final spacing = 4.0;
+    final tileHeight = config.tileHeight.toDouble();
+
+    double currentRowHeight = 0;
+    double totalHeight = 0;
+    int currentRowCrossCount = 0;
+
+    for (final tile in tiles) {
+      final crossCount = tile.size.crossAxisCellCount;
+      final mainCount = tile.size.mainAxisCellCount;
+
+      if (currentRowCrossCount + crossCount > columns) {
+        // 换行
+        totalHeight += currentRowHeight + spacing;
+        currentRowHeight = tileHeight * mainCount;
+        currentRowCrossCount = crossCount;
+      } else {
+        currentRowCrossCount += crossCount;
+        final tileRowHeight = tileHeight * mainCount + spacing * (mainCount - 1);
+        if (tileRowHeight > currentRowHeight) {
+          currentRowHeight = tileRowHeight;
+        }
+      }
+    }
+
+    totalHeight += currentRowHeight;
+    return totalHeight + spacing;
+  }
+
+  /// 构建磁贴组
+  Widget _buildTileGroup(
+    List<MetroTile> tiles,
+    ResponsiveTileConfig config,
+    DeviceType deviceType,
+  ) {
+    final columns = config.getColumns(deviceType);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final spacing = context.responsiveSpacing(config.spacing);
+        final tileHeight = context.responsive(config.tileHeight);
+        final tileWidth = (constraints.maxWidth - spacing * (columns - 1)) / columns;
+
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: tiles.map((tile) {
+            final int crossCount = tile.size.crossAxisCellCount;
+            final int mainCount = tile.size.mainAxisCellCount;
+
+            final actualCrossCount = crossCount > columns ? columns : crossCount;
+
+            final width = tileWidth * actualCrossCount + spacing * (actualCrossCount - 1);
+            final height = tileHeight * mainCount + spacing * (mainCount - 1);
+
+            return SizedBox(
+              width: width,
+              height: height,
+              child: tile,
+            );
+          }).toList(),
+        );
+      },
     );
   }
 
@@ -253,64 +505,173 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
     }
   }
 
-  Widget _buildResponsiveTileGrid(
-    List<MetroTile> tiles,
-    ResponsiveTileConfig config,
-    DeviceType deviceType,
-  ) {
-    final columns = config.getColumns(deviceType);
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final spacing = context.responsiveSpacing(config.spacing);
-        final tileHeight = context.responsive(config.tileHeight);
-        final tileWidth = (constraints.maxWidth - spacing * (columns - 1)) / columns;
-
-        return Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
-          children: tiles.map((tile) {
-            // 计算磁贴实际尺寸
-            final int crossCount = tile.size.crossAxisCellCount;
-            final int mainCount = tile.size.mainAxisCellCount;
-
-            // 确保磁贴不超过行宽
-            final actualCrossCount = crossCount > columns ? columns : crossCount;
-
-            final width = tileWidth * actualCrossCount + spacing * (actualCrossCount - 1);
-            final height = tileHeight * mainCount + spacing * (mainCount - 1);
-
-            return SizedBox(
-              width: width,
-              height: height,
-              child: tile,
-            );
-          }).toList(),
-        );
-      },
-    );
-  }
-
-  List<MetroTile> _buildAllTiles(
-    BuildContext context,
+  /// 构建日历网格磁贴（始终显示）
+  MetroTile _buildCalendarGridTile(
     CalendarViewModel _viewModel,
     CalendarSettingsProvider settings,
-    LocaleProvider locale,
+    bool isMobile,
   ) {
-    final tiles = <MetroTile>[];
-    final isMobile = context.isMobile;
-
-    // 1. 日历网格磁贴（大磁贴 2x2）- 使用新的日历网格组件
-    tiles.add(MetroTile(
+    return MetroTile(
       size: MetroTileSize.large,
       backgroundColor: MetroColors.calendar,
       title: '${_viewModel.currentMonth.year}年${_viewModel.currentMonth.month}月',
       enableFlip: false,
       child: _buildEnhancedCalendarGrid(_viewModel, settings, isMobile),
+    );
+  }
+
+  /// 获取所有启用的历法系统
+  List<CalendarSystemGroup> _getEnabledCalendarSystems(
+    CalendarSettingsProvider settings,
+    CalendarViewModel _viewModel,
+    LocaleProvider locale,
+    bool isMobile,
+  ) {
+    final systems = <CalendarSystemGroup>[];
+    final selectedDate = _viewModel.selectedCalendarDate;
+
+    // 农历系统
+    if (settings.showLunarCalendar && selectedDate?.lunarDate != null) {
+      systems.add(CalendarSystemGroup(
+        type: CalendarType.lunar,
+        name: '农历',
+        tiles: _buildLunarTiles(selectedDate!, isMobile),
+      ));
+    }
+
+    // 藏历系统
+    if (settings.showTibetanCalendar && selectedDate?.tibetanDate != null) {
+      systems.add(CalendarSystemGroup(
+        type: CalendarType.tibetan,
+        name: '藏历',
+        tiles: _buildTibetanTiles(selectedDate!, isMobile),
+      ));
+    }
+
+    // 节日磁贴（单独一组或合并到当前历法）
+    if (settings.showFestivals && selectedDate?.festivals.isNotEmpty == true) {
+      systems.add(CalendarSystemGroup(
+        type: CalendarType.solar,
+        name: '节日',
+        tiles: _buildFestivalTiles(selectedDate!, isMobile),
+      ));
+    }
+
+    return systems;
+  }
+
+  /// 构建农历系统磁贴
+  List<MetroTile> _buildLunarTiles(CalendarDate selectedDate, bool isMobile) {
+    final tiles = <MetroTile>[];
+    final lunar = selectedDate.lunarDate!;
+
+    // 农历月日磁贴
+    tiles.add(MetroTile(
+      size: MetroTileSize.small,
+      backgroundColor: MetroColors.lunar,
+      title: '农历',
+      mainContent: '${lunar.month}月${lunar.day}',
+      subtitle: lunar.ganZhi ?? lunar.zodiac ?? '',
+      explanation: '农历${lunar.ganZhi ?? ""}年${lunar.isLeapMonth ? "闰" : ""}${lunar.monthName ?? "${lunar.month}月"}${lunar.dayName ?? "${lunar.day}日"}。'
+          '${lunar.zodiac != null ? "生肖属${lunar.zodiac}。" : ""}'
+          '干支纪年是中国传统历法的重要组成部分，以天干地支循环纪年。',
     ));
 
-    // 添加其他磁贴
-    tiles.addAll(_buildInfoTiles(_viewModel, settings, locale, isMobile));
+    // 节气磁贴
+    if (selectedDate.dailyInfo?.note != null) {
+      tiles.add(MetroTile(
+        size: MetroTileSize.small,
+        backgroundColor: MetroColors.solarTerm,
+        title: '节气',
+        mainContent: selectedDate.dailyInfo!.note,
+        explanation: '${selectedDate.dailyInfo!.note}是二十四节气之一，'
+            '标志着季节变化的重要时刻。二十四节气是中国古人根据太阳运行规律制定的补充历法，'
+            '对农业生产和日常生活具有重要指导意义。',
+      ));
+    }
+
+    // 宜忌磁贴
+    if (selectedDate.dailyInfo != null) {
+      final yiList = selectedDate.dailyInfo!.suitable;
+      final jiList = selectedDate.dailyInfo!.unsuitable;
+      if (yiList.isNotEmpty || jiList.isNotEmpty) {
+        final yiText = yiList.take(3).join(' ');
+        final jiText = jiList.take(3).join(' ');
+        tiles.add(MetroTile(
+          size: MetroTileSize.wide,
+          backgroundColor: MetroColors.yiJi,
+          title: '宜忌',
+          subtitle: '宜: $yiText\n忌: $jiText',
+          explanation: '宜：今日适合进行的事项，包括${yiList.join("、")}等。'
+              '忌：今日应避免的事项，包括${jiList.join("、")}等。'
+              '宜忌源自传统黄历推算，根据天干地支、五行生克等理论计算得出。',
+        ));
+      }
+    }
+
+    // 冲煞磁贴
+    if (selectedDate.dailyInfo?.chongSha != null) {
+      tiles.add(MetroTile(
+        size: MetroTileSize.small,
+        backgroundColor: MetroColors.chongSha,
+        title: '冲煞',
+        mainContent: selectedDate.dailyInfo!.chongSha!.split(' ').first,
+        explanation: _getChongShaExplanation(selectedDate.dailyInfo!.chongSha!),
+      ));
+    }
+
+    // 五行磁贴
+    if (selectedDate.dailyInfo?.fiveElements != null) {
+      tiles.add(MetroTile(
+        size: MetroTileSize.small,
+        backgroundColor: MetroColors.fiveElements,
+        title: '五行',
+        mainContent: selectedDate.dailyInfo!.fiveElements,
+        explanation: '今日五行属${selectedDate.dailyInfo!.fiveElements}。'
+            '五行学说是中国古代哲学的重要组成部分，认为万物由金、木、水、火、土五种基本元素构成。'
+            '五行相生相克，影响着人的运势和活动。',
+      ));
+    }
+
+    return tiles;
+  }
+
+  /// 构建藏历系统磁贴
+  List<MetroTile> _buildTibetanTiles(CalendarDate selectedDate, bool isMobile) {
+    final tiles = <MetroTile>[];
+    final tibetan = selectedDate.tibetanDate!;
+
+    // 藏历月日磁贴
+    tiles.add(MetroTile(
+      size: MetroTileSize.small,
+      backgroundColor: MetroColors.tibetan,
+      title: '藏历',
+      mainContent: '${tibetan.month}月${tibetan.day}',
+      subtitle: tibetan.yearElement ?? '',
+      explanation: '藏历${tibetan.yearElement ?? ""}，'
+          '${tibetan.monthNameChinese ?? "${tibetan.month}月"}${tibetan.dayNameChinese ?? "${tibetan.day}日"}。'
+          '${tibetan.isMissingDay ? "今日为缺日。" : ""}'
+          '${tibetan.isDoubleday ? "今日为重日。" : ""}'
+          '藏历是基于印度时轮历的阴阳合历，融合了汉族农历和印度历法的特点。',
+    ));
+
+    return tiles;
+  }
+
+  /// 构建节日磁贴
+  List<MetroTile> _buildFestivalTiles(CalendarDate selectedDate, bool isMobile) {
+    final tiles = <MetroTile>[];
+    final festivals = selectedDate.festivals;
+    final festivalNames = festivals.take(3).map((f) => f.name).join(' · ');
+
+    tiles.add(MetroTile(
+      size: MetroTileSize.wide,
+      backgroundColor: MetroColors.festival,
+      title: '节日',
+      subtitle: festivalNames,
+      explanation: '今日是${festivals.map((f) => f.name).join("、")}。'
+          '${festivals.first.description ?? "这是重要的传统节日，具有丰富的文化内涵和历史意义。"}',
+    ));
 
     return tiles;
   }
@@ -342,66 +703,87 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
   ) {
     final weekdays = ['一', '二', '三', '四', '五', '六', '日'];
 
-    return Padding(
-      padding: EdgeInsets.all(isMobile ? 4 : 8),
-      child: Column(
-        children: [
-          // 星期标题行
-          Row(
-            children: weekdays.map((d) {
-              final isWeekend = d == '六' || d == '日';
-              return Expanded(
-                child: Center(
-                  child: Text(
-                    d,
-                    style: TextStyle(
-                      color: isWeekend
-                          ? Colors.white.withOpacity(0.4)
-                          : Colors.white.withOpacity(0.6),
-                      fontSize: isMobile ? 9 : 11,
-                    ),
-                  ),
+    // 计算需要的行数
+    final totalCells = dates.length > 35 ? 42 : 35;
+    final rows = (totalCells / 7).ceil();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 计算可用高度
+        final availableHeight = constraints.maxHeight;
+        // 星期标题高度
+        final headerHeight = isMobile ? 14.0 : 18.0;
+        // 间距
+        final spacing = isMobile ? 2.0 : 4.0;
+        // 计算每个日期格子的高度
+        final cellHeight = (availableHeight - headerHeight - spacing) / rows;
+        final cellWidth = (constraints.maxWidth - 12) / 7; // 12 = padding
+
+        return Padding(
+          padding: EdgeInsets.all(isMobile ? 4 : 8),
+          child: Column(
+            children: [
+              // 星期标题行
+              SizedBox(
+                height: headerHeight,
+                child: Row(
+                  children: weekdays.map((d) {
+                    final isWeekend = d == '六' || d == '日';
+                    return Expanded(
+                      child: Center(
+                        child: Text(
+                          d,
+                          style: TextStyle(
+                            color: isWeekend
+                                ? Colors.white.withOpacity(0.4)
+                                : Colors.white.withOpacity(0.6),
+                            fontSize: isMobile ? 9 : 11,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 ),
-              );
-            }).toList(),
-          ),
-          SizedBox(height: isMobile ? 2 : 4),
-
-          // 日期网格
-          Expanded(
-            child: GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 7,
-                childAspectRatio: 1,
-                mainAxisSpacing: 2,
-                crossAxisSpacing: 2,
               ),
-              itemCount: dates.length > 35 ? 42 : 35,
-              itemBuilder: (context, index) {
-                if (index >= dates.length) {
-                  return const SizedBox();
-                }
+              SizedBox(height: spacing),
 
-                final date = dates[index];
-                final isToday = _isSameDay(date.solarDate, now);
-                final isSelected = _isSameDay(date.solarDate, _viewModel.selectedDate);
-                final isCurrentMonth = date.solarDate.month == _viewModel.currentMonth.month;
+              // 日期网格 - 使用 Wrap 代替 GridView
+              Expanded(
+                child: Wrap(
+                  spacing: 2,
+                  runSpacing: 2,
+                  children: List.generate(totalCells, (index) {
+                    if (index >= dates.length) {
+                      return SizedBox(
+                        width: cellWidth - 2,
+                        height: cellHeight - 2,
+                      );
+                    }
 
-                return _buildDateCell(
-                  date,
-                  isToday,
-                  isSelected,
-                  isCurrentMonth,
-                  isMobile,
-                  _viewModel,
-                );
-              },
-            ),
+                    final date = dates[index];
+                    final isToday = _isSameDay(date.solarDate, now);
+                    final isSelected = _isSameDay(date.solarDate, _viewModel.selectedDate);
+                    final isCurrentMonth = date.solarDate.month == _viewModel.currentMonth.month;
+
+                    return SizedBox(
+                      width: cellWidth - 2,
+                      height: cellHeight - 2,
+                      child: _buildDateCell(
+                        date,
+                        isToday,
+                        isSelected,
+                        isCurrentMonth,
+                        isMobile,
+                        _viewModel,
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -687,139 +1069,6 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
         ],
       ),
     );
-  }
-
-  List<MetroTile> _buildInfoTiles(
-    CalendarViewModel _viewModel,
-    CalendarSettingsProvider settings,
-    LocaleProvider locale,
-    bool isMobile,
-  ) {
-    final tiles = <MetroTile>[];
-    final selectedDate = _viewModel.selectedCalendarDate;
-
-    // 2. 选中日期磁贴（宽磁贴 2x1）
-    if (selectedDate != null) {
-      tiles.add(MetroTile(
-        size: MetroTileSize.wide,
-        backgroundColor: MetroColors.calendar.withOpacity(0.8),
-        title: '选中日期',
-        mainContent: '${selectedDate.solarDate.day}',
-        subtitle: _getSelectedDateSubtitle(selectedDate, settings),
-        explanation: '${selectedDate.solarDate.year}年${selectedDate.solarDate.month}月${selectedDate.solarDate.day}日，'
-            '${_getWeekdayName(selectedDate.solarDate.weekday)}。'
-            '${selectedDate.lunarDate != null ? '农历${selectedDate.lunarDate!.yearName ?? ""}年，${selectedDate.lunarDate!.monthName ?? "${selectedDate.lunarDate!.month}月"}${selectedDate.lunarDate!.dayName ?? "${selectedDate.lunarDate!.day}日"}。' : ''}',
-      ));
-    }
-
-    // 3. 农历磁贴组
-    if (settings.showLunarCalendar && selectedDate?.lunarDate != null) {
-      final lunar = selectedDate!.lunarDate!;
-
-      // 农历月日磁贴
-      tiles.add(MetroTile(
-        size: MetroTileSize.small,
-        backgroundColor: MetroColors.lunar,
-        title: '农历',
-        mainContent: '${lunar.month}月${lunar.day}',
-        subtitle: lunar.ganZhi ?? lunar.zodiac ?? '',
-        explanation: '农历${lunar.ganZhi ?? ""}年${lunar.isLeapMonth ? "闰" : ""}${lunar.monthName ?? "${lunar.month}月"}${lunar.dayName ?? "${lunar.day}日"}。'
-            '${lunar.zodiac != null ? "生肖属${lunar.zodiac}。" : ""}'
-            '干支纪年是中国传统历法的重要组成部分，以天干地支循环纪年。',
-      ));
-
-      // 节气磁贴
-      if (selectedDate.dailyInfo?.note != null) {
-        tiles.add(MetroTile(
-          size: MetroTileSize.small,
-          backgroundColor: MetroColors.solarTerm,
-          title: '节气',
-          mainContent: selectedDate.dailyInfo!.note,
-          explanation: '${selectedDate.dailyInfo!.note}是二十四节气之一，'
-              '标志着季节变化的重要时刻。二十四节气是中国古人根据太阳运行规律制定的补充历法，'
-              '对农业生产和日常生活具有重要指导意义。',
-        ));
-      }
-
-      // 宜忌磁贴
-      if (selectedDate.dailyInfo != null) {
-        final yiList = selectedDate.dailyInfo!.suitable;
-        final jiList = selectedDate.dailyInfo!.unsuitable;
-        if (yiList.isNotEmpty || jiList.isNotEmpty) {
-          final yiText = yiList.take(3).join(' ');
-          final jiText = jiList.take(3).join(' ');
-          tiles.add(MetroTile(
-            size: MetroTileSize.wide,
-            backgroundColor: MetroColors.yiJi,
-            title: '宜忌',
-            subtitle: '宜: $yiText\n忌: $jiText',
-            explanation: '宜：今日适合进行的事项，包括${yiList.join("、")}等。'
-                '忌：今日应避免的事项，包括${jiList.join("、")}等。'
-                '宜忌源自传统黄历推算，根据天干地支、五行生克等理论计算得出。',
-          ));
-        }
-      }
-
-      // 冲煞磁贴
-      if (selectedDate.dailyInfo?.chongSha != null) {
-        tiles.add(MetroTile(
-          size: MetroTileSize.small,
-          backgroundColor: MetroColors.chongSha,
-          title: '冲煞',
-          mainContent: selectedDate.dailyInfo!.chongSha!.split(' ').first,
-          explanation: _getChongShaExplanation(selectedDate.dailyInfo!.chongSha!),
-        ));
-      }
-
-      // 五行磁贴
-      if (selectedDate.dailyInfo?.fiveElements != null) {
-        tiles.add(MetroTile(
-          size: MetroTileSize.small,
-          backgroundColor: MetroColors.fiveElements,
-          title: '五行',
-          mainContent: selectedDate.dailyInfo!.fiveElements,
-          explanation: '今日五行属${selectedDate.dailyInfo!.fiveElements}。'
-              '五行学说是中国古代哲学的重要组成部分，认为万物由金、木、水、火、土五种基本元素构成。'
-              '五行相生相克，影响着人的运势和活动。',
-        ));
-      }
-    }
-
-    // 4. 藏历磁贴组
-    if (settings.showTibetanCalendar && selectedDate?.tibetanDate != null) {
-      final tibetan = selectedDate!.tibetanDate!;
-
-      // 藏历月日磁贴
-      tiles.add(MetroTile(
-        size: MetroTileSize.small,
-        backgroundColor: MetroColors.tibetan,
-        title: '藏历',
-        mainContent: '${tibetan.month}月${tibetan.day}',
-        subtitle: tibetan.yearElement ?? '',
-        explanation: '藏历${tibetan.yearElement ?? ""}，'
-            '${tibetan.monthNameChinese ?? "${tibetan.month}月"}${tibetan.dayNameChinese ?? "${tibetan.day}日"}。'
-            '${tibetan.isMissingDay ? "今日为缺日。" : ""}'
-            '${tibetan.isDoubleday ? "今日为重日。" : ""}'
-            '藏历是基于印度时轮历的阴阳合历，融合了汉族农历和印度历法的特点。',
-      ));
-    }
-
-    // 5. 节日磁贴
-    if (settings.showFestivals && selectedDate?.festivals.isNotEmpty == true) {
-      final festivals = selectedDate!.festivals;
-      final festivalNames = festivals.take(3).map((f) => f.name).join(' · ');
-
-      tiles.add(MetroTile(
-        size: MetroTileSize.wide,
-        backgroundColor: MetroColors.festival,
-        title: '节日',
-        subtitle: festivalNames,
-        explanation: '今日是${festivals.map((f) => f.name).join("、")}。'
-            '${festivals.first.description ?? "这是重要的传统节日，具有丰富的文化内涵和历史意义。"}',
-      ));
-    }
-
-    return tiles;
   }
 
   String _getWeekdayName(int weekday) {
