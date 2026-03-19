@@ -59,7 +59,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: const Color(0xFFF5F0E8), // 温暖的米白色背景
       body: ListenableBuilder(
         listenable: _viewModel,
         builder: (context, _) {
@@ -88,7 +88,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
                   const SizedBox(width: 8),
                   // 设置按钮
                   IconButton(
-                    icon: const Icon(Icons.settings, color: Colors.white70),
+                    icon: const Icon(Icons.settings, color: Color(0xFF5D4E37)),
                     onPressed: () => _showSettings(context),
                   ),
                   const SizedBox(width: 8),
@@ -121,7 +121,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
         Text(
           '${month.year}年${month.month}月',
           style: TextStyle(
-            color: Colors.white,
+            color: const Color(0xFF5D4E37),
             fontSize: isMobile ? 18 : 24,
             fontWeight: FontWeight.w300,
           ),
@@ -133,7 +133,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
             child: Text(
               d,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
+                color: const Color(0xFF5D4E37).withOpacity(0.6),
                 fontSize: 12,
               ),
             ),
@@ -147,7 +147,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 4 : 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: const Color(0xFF5D4E37).withOpacity(0.08),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -165,7 +165,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
                 vertical: isMobile ? 4 : 6,
               ),
               decoration: BoxDecoration(
-                color: isSelected ? Colors.white.withOpacity(0.2) : Colors.transparent,
+                color: isSelected ? const Color(0xFF5D4E37).withOpacity(0.15) : Colors.transparent,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
@@ -173,7 +173,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
                 children: [
                   Icon(
                     mode.icon,
-                    color: isSelected ? Colors.white : Colors.white70,
+                    color: isSelected ? const Color(0xFF5D4E37) : const Color(0xFF5D4E37).withOpacity(0.7),
                     size: isMobile ? 12 : 14,
                   ),
                   if (!isMobile) ...[
@@ -181,7 +181,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
                     Text(
                       mode.displayName,
                       style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.white70,
+                        color: isSelected ? const Color(0xFF5D4E37) : const Color(0xFF5D4E37).withOpacity(0.7),
                         fontSize: 12,
                       ),
                     ),
@@ -262,14 +262,14 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
                         color: isActive
-                            ? Colors.white.withOpacity(0.2)
-                            : Colors.white.withOpacity(0.05),
+                            ? const Color(0xFF5D4E37).withOpacity(0.15)
+                            : const Color(0xFF5D4E37).withOpacity(0.05),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         calendarSystems[index].name,
                         style: TextStyle(
-                          color: isActive ? Colors.white : Colors.white70,
+                          color: isActive ? const Color(0xFF5D4E37) : const Color(0xFF5D4E37).withOpacity(0.7),
                           fontSize: isMobile ? 11 : 12,
                           fontWeight: isActive ? FontWeight.w500 : FontWeight.normal,
                         ),
@@ -299,7 +299,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
 
     return MetroTile(
       size: MetroTileSize.wide,
-      backgroundColor: MetroColors.calendar.withOpacity(0.8),
+      backgroundColor: MetroColors.festival, // 使用金黄色
       title: '选中日期',
       mainContent: '${selectedDate.solarDate.day}',
       subtitle: _getSelectedDateSubtitle(selectedDate, settings),
@@ -557,7 +557,8 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
   ) {
     return MetroTile(
       size: MetroTileSize.large,
-      backgroundColor: MetroColors.calendar,
+      backgroundColor: Colors.white, // 白色背景
+      foregroundColor: const Color(0xFF5D4E37), // 深棕色文字
       title: '${_viewModel.currentMonth.year}年${_viewModel.currentMonth.month}月',
       enableFlip: false,
       child: _buildEnhancedCalendarGrid(_viewModel, settings, isMobile),
@@ -779,8 +780,8 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
                           d,
                           style: TextStyle(
                             color: isWeekend
-                                ? Colors.white.withOpacity(0.4)
-                                : Colors.white.withOpacity(0.6),
+                                ? const Color(0xFFE74C3C).withOpacity(0.7)
+                                : const Color(0xFF5D4E37).withOpacity(0.6),
                             fontSize: isMobile ? 9 : 11,
                           ),
                         ),
@@ -851,9 +852,9 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
       child: Container(
         decoration: BoxDecoration(
           color: isSelected
-              ? Colors.white.withOpacity(0.3)
+              ? MetroColors.calendar.withOpacity(0.2)
               : isToday
-                  ? Colors.white.withOpacity(0.15)
+                  ? MetroColors.calendar.withOpacity(0.1)
                   : null,
           borderRadius: BorderRadius.circular(4),
         ),
@@ -865,8 +866,8 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
                 '${date.solarDate.day}',
                 style: TextStyle(
                   color: isCurrentMonth
-                      ? Colors.white
-                      : Colors.white.withOpacity(0.3),
+                      ? const Color(0xFF5D4E37)
+                      : const Color(0xFF5D4E37).withOpacity(0.3),
                   fontSize: isMobile ? 11 : 13,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
@@ -886,8 +887,8 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: hasFestival || hasSolarTerm
-                        ? Colors.orange.withOpacity(0.9)
-                        : Colors.white.withOpacity(0.5),
+                        ? MetroColors.calendar
+                        : const Color(0xFF5D4E37).withOpacity(0.5),
                     fontSize: isMobile ? 6 : 7,
                   ),
                   maxLines: 1,
@@ -903,8 +904,8 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
                 child: Container(
                   width: isMobile ? 3 : 4,
                   height: isMobile ? 3 : 4,
-                  decoration: const BoxDecoration(
-                    color: Colors.orange,
+                  decoration: BoxDecoration(
+                    color: MetroColors.calendar,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -951,10 +952,10 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
                 padding: EdgeInsets.symmetric(vertical: isMobile ? 4 : 6),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? Colors.white.withOpacity(0.3)
+                      ? MetroColors.calendar.withOpacity(0.2)
                       : isToday
-                          ? Colors.white.withOpacity(0.15)
-                          : Colors.white.withOpacity(0.05),
+                          ? MetroColors.calendar.withOpacity(0.1)
+                          : const Color(0xFF5D4E37).withOpacity(0.05),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Column(
@@ -963,7 +964,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
                     Text(
                       weekdays[index],
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
+                        color: const Color(0xFF5D4E37).withOpacity(0.6),
                         fontSize: isMobile ? 8 : 9,
                       ),
                     ),
@@ -971,7 +972,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
                     Text(
                       '${date.solarDate.day}',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: const Color(0xFF5D4E37),
                         fontSize: isMobile ? 16 : 20,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.w300,
                       ),
@@ -980,7 +981,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
                     Text(
                       date.lunarDate?.dayName ?? '',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.5),
+                        color: const Color(0xFF5D4E37).withOpacity(0.5),
                         fontSize: isMobile ? 7 : 8,
                       ),
                     ),
@@ -1002,7 +1003,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
       return const Center(
         child: Text(
           '请选择日期',
-          style: TextStyle(color: Colors.white54),
+          style: TextStyle(color: Color(0xFF5D4E37), fontWeight: FontWeight.w300),
         ),
       );
     }
@@ -1020,7 +1021,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
           Text(
             weekdayName,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
+              color: const Color(0xFF5D4E37).withOpacity(0.6),
               fontSize: isMobile ? 10 : 12,
             ),
           ),
@@ -1035,7 +1036,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
               Text(
                 '${selectedDate.solarDate.day}',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: const Color(0xFF5D4E37),
                   fontSize: isMobile ? 36 : 48,
                   fontWeight: FontWeight.w300,
                 ),
@@ -1044,7 +1045,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
               Text(
                 '${selectedDate.solarDate.month}月',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
+                  color: const Color(0xFF5D4E37).withOpacity(0.7),
                   fontSize: isMobile ? 14 : 18,
                 ),
               ),
@@ -1060,7 +1061,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
                 vertical: isMobile ? 2 : 3,
               ),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.8),
+                color: MetroColors.calendar,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -1080,7 +1081,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
             Text(
               '农历 ${selectedDate.lunarDate!.monthName ?? '${selectedDate.lunarDate!.month}月'}${selectedDate.lunarDate!.dayName ?? '${selectedDate.lunarDate!.day}日'}',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.6),
+                color: const Color(0xFF5D4E37).withOpacity(0.6),
                 fontSize: isMobile ? 10 : 12,
               ),
             ),
@@ -1092,7 +1093,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
               child: Text(
                 selectedDate.dailyInfo!.note!,
                 style: TextStyle(
-                  color: Colors.orange,
+                  color: MetroColors.calendar,
                   fontSize: isMobile ? 10 : 12,
                 ),
               ),
@@ -1104,7 +1105,7 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
               child: Text(
                 selectedDate.festivals.map((f) => f.name).join(' · '),
                 style: TextStyle(
-                  color: Colors.orange.withOpacity(0.8),
+                  color: MetroColors.festival,
                   fontSize: isMobile ? 9 : 11,
                 ),
                 textAlign: TextAlign.center,

@@ -356,35 +356,35 @@ class MetroTileGrid extends StatelessWidget {
   }
 }
 
-/// Metro 配色方案
+/// Metro 配色方案 - 阳光温暖的 Windows 8 Metro 风格
 class MetroColors {
-  // 日历网格
-  static const Color calendar = Color(0xFF4C1D95); // 深紫色
+  // 日历网格 - 阳光橙色
+  static const Color calendar = Color(0xFFFF8C00); // 橙色
 
-  // 农历
-  static const Color lunar = Color(0xFFB91C1C); // 红色
+  // 农历 - 珊瑚红
+  static const Color lunar = Color(0xFFE74C3C); // 珊瑚红
 
-  // 藏历
-  static const Color tibetan = Color(0xFF1E3A5F); // 藏蓝色
+  // 藏历 - 天空蓝
+  static const Color tibetan = Color(0xFF3498DB); // 天蓝色
 
-  // 节日
-  static const Color festival = Color(0xFFD97706); // 金色
+  // 节日 - 金黄色
+  static const Color festival = Color(0xFFF1C40F); // 金黄色
 
-  // 节气
-  static const Color solarTerm = Color(0xFF059669); // 绿色
+  // 节气 - 翠绿色
+  static const Color solarTerm = Color(0xFF27AE60); // 翠绿
 
-  // 殊胜日
-  static const Color specialDay = Color(0xFF7C3AED); // 紫色
+  // 殊胜日 - 暖橙色
+  static const Color specialDay = Color(0xFFE67E22); // 暖橙
 
-  // 冲煞
-  static const Color chongSha = Color(0xFFDC2626); // 深红
+  // 冲煞 - 玫瑰红
+  static const Color chongSha = Color(0xFFE74C3C); // 玫瑰红
 
-  // 五行
-  static const Color fiveElements = Color(0xFF0891B2); // 青色
+  // 五行 - 青绿色
+  static const Color fiveElements = Color(0xFF1ABC9C); // 青绿
 
-  // 宜忌
-  static const Color yiJi = Color(0xFF65A30D); // 黄绿
+  // 宜忌 - 青柠绿
+  static const Color yiJi = Color(0xFF2ECC71); // 青柠绿
 
-  // 默认
-  static const Color defaultTile = Color(0xFF374151); // 灰色
+  // 默认 - 暖灰色
+  static const Color defaultTile = Color(0xFF95A5A6); // 暖灰
 }
