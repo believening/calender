@@ -214,6 +214,12 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
     // 选中日期磁贴（始终显示在日历网格下方）
     final selectedDateTile = _buildSelectedDateTile(_viewModel, settings, isMobile);
 
+    // 获取当前历法系统的磁贴
+    List<MetroTile> currentTiles = [];
+    if (calendarSystems.isNotEmpty && _currentCalendarPage < calendarSystems.length) {
+      currentTiles = calendarSystems[_currentCalendarPage].tiles;
+    }
+
     return GestureDetector(
       onScaleUpdate: (details) {
         final newScale = details.scale;
@@ -236,9 +242,47 @@ class _MetroCalendarViewState extends State<MetroCalendarView> {
           if (selectedDateTile != null)
             _buildSingleTileWidget(selectedDateTile, config, deviceType),
 
-          // PageView 用于历法系统磁贴组
-          if (calendarSystems.isNotEmpty)
-            _buildCalendarSystemPageView(calendarSystems, config, deviceType, isMobile),
+          // 历法系统指示器
+          if (calendarSystems.length > 1)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(calendarSystems.length, (index) {
+                  final isActive = index == _currentCalendarPage;
+                  return GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      setState(() {
+                        _currentCalendarPage = index;
+                      });
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? Colors.white.withOpacity(0.2)
+                            : Colors.white.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        calendarSystems[index].name,
+                        style: TextStyle(
+                          color: isActive ? Colors.white : Colors.white70,
+                          fontSize: isMobile ? 11 : 12,
+                          fontWeight: isActive ? FontWeight.w500 : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+
+          // 当前历法系统的磁贴
+          if (currentTiles.isNotEmpty)
+            _buildTileGroup(currentTiles, config, deviceType),
         ],
       ),
     );
